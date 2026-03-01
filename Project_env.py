@@ -5,12 +5,13 @@ class BoardGame:
 
     def __init__(self):
         self.start_state = np.array([
-            [0, 0, 0, 7, 7, 0, 0, 0],
+            [0, 0, 7, 7, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 7, 7, 0, 0, 0]
+            [0, 0, 7, 7, 0, 0, 0, 0]
         ])
         self.state = self.start_state
         self.reward = 0
+        self.rosettes = {0: (1, 7), 1: (4, ), 2: (1, 7)}
 
     def reset(self):
         """
