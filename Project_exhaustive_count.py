@@ -15,7 +15,7 @@ def main():
             actions = env.get_actions(current_state, roll)
             for action in actions:
                 next_state = env.transition(current_state, action, roll)
-                if next_state not in explored and next_state not in frontier:
+                if (next_state not in explored) and (next_state not in frontier):
                     frontier.append(next_state)
 
 

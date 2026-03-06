@@ -8,129 +8,115 @@ class BoardGame:
         if n > int('111', 2):
             raise ValueError
         self.n = n
-        self.start_state = self.encode_state()
+        self.start_state = 0
         self.state = self.start_state
 
+        self.turn = 0
+        self.start_board = np.array([
+                [0, 0, 0, self.n, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, self.n, 0, 0, 0, 0, 0]
+        ])
+        self.board = self.start_board
+
         self.reward = 0
-        self.rosettes = set([4, 8, 14])
+        # self.rosettes = set([4, 8, 14])
+        self.rosettes = set([(0, 1), (0, 7), (1, 4), (2, 1), (2, 7)])
 
-    def encode_state(self,
-                     turn=0,
-                     p1=0,
-                     p2=0,
-                     p1_blue='000000',
-                     p2_blue='000000',
-                     green='00000000'):
-        out = turn
-        out <<= 3
-        out | p1
-        out <<= 3
-        out | p2
-        out <<= 6
-        out | int(p1_blue, 2)
-        out <<= 6
-        out | int(p2_blue, 2)
-        out <<= 13
-        out | int(green, 3)
+        self.blue_mask = [4, 5, 6, 7, 0, 1]
 
-        self.state = out
-        return out
+    def encode_state(self, turn, board):
+        # turn = self.turn
+        turn = int(turn)
+        p1 = board[0, 2]
+        p2 = board[2, 2]
+        # p1_blue = np.concatenate((self.board[0, 4:], self.board[0, :2]))
+        # p2_blue = np.concatenate((self.board[2, 4:], self.board[2, :2]))
+        p1_blue = ''.join(board[0, self.blue_mask])
+        p2_blue = ''.join(board[2, self.blue_mask])
 
-    def _to_ternary(self, n):
-        if n == 0:
-            return '0' * 13
-        out = []
-        while n:
-            n, r = divmod(n, 3)
-            out.append(str(r))
-        while len(out) < 13:
-            out.append(0)
-        return ''.join(reversed(out))
+        green = ''.join(board[1: 0])
+
+        green_bin = np.binary_repr(int(green, 3))
+        p1_bin = np.binary_repr(p1)
+        p2_bin = np.binary_repr(p2)
+
+        p1_bin = '0'*(3-len(p1_bin)) + p1_bin
+        p2_bin = '0'*(3-len(p2_bin)) + p2_bin
+        green_bin = '0'*(13-len(green_bin)) + green_bin
+
+        bit_string = f'{turn}{p1_bin}{p2_bin}{p1_blue}{p2_blue}{green_bin}'
+        assert len(bit_string) == 32, f'{len(bit_string)} {bit_string}'
+
+        return int(bit_string)
 
     def decode_state(self, state):
-        green = state & int('1111111111111', 2)
-        state >>= 13
-        p2_blue = format(state & int('111111', 2), 'b')
-        while len(p2_blue) < 6:
-            p2_blue += '0'
-        state >>= 6
-        p1_blue = format(state & int('111111', 2), 'b')
-        while len(p1_blue) < 6:
-            p1_blue += '0'
-        state >>= 6
-        p2 = state & int('111', 2)
-        state >>= 3
-        p1 = state & int('111', 2)
-        state >>= 3
-        turn = state
+        # bit_string = np.binary_repr(state)
+        # bits = np.array(list(bit_string))
+        bits = np.binary_repr(state)
+        bits = '0'*(32-len(bits)) + bits
 
-        return turn, p1, p2, p1_blue, p2_blue, self._to_ternary(green)
+        turn = int(bits[0])
+        p1_score = int(bits[1:3])
+        p2_score = int(bits[3:6])
+        p1_blue = bits[7:13]
+        p2_blue = bits[13:19]
+        green = np.base_repr(int(bits[19:]), 3)
+        green = '0'*(8-len(green)) + green
+
+        board = np.array([
+            [p1_blue[:2], p1_score, self.n - p1_score, p1_blue[:2]],
+            list(green),
+            [p2_blue[:2], p2_score, self.n - p2_score, p2_blue[:2]]
+        ])
+
+        return turn, board
 
     def get_actions(self, state, roll):
-        turn, p1_score, p2_score, p1_blue, p2_blue, green = self.decode_state(state)
-        scores = [p1_score, p2_score]
+        turn, board = self.decode_state(state)
+        p1_score = board[0, 2]
+        p2_score = board[2, 2]
+
+        p1_blue = board[0, self.blue_mask]
+        p2_blue = board[2, self.blue_mask]
+        green = board[1]
+
         player = turn + 1
 
-        state_arr = []
-        if not turn:
-            state_arr = p1_blue[:4] + green + p1_blue[4:]
-        else:
-            state_arr = p2_blue[:4] + green + p2_blue[4:]
+        lane = np.concatenate((p1_blue[:4], green, p1_blue[4:])) \
+            if player ==1 else np.concatenate((p2_blue[:4], green, p2_blue[4:]))
 
-        options = [] # indices of current player's pieces
-        for i in range(len(state_arr)):
-            if 5 <= i <= 12:
-                if state_arr[i] == player:
-                    options.append(i+1)
-            else:
-                if state_arr[i] == 1:
-                    options.append(i+1)
+        positions = lane[lane == player]
 
-        if scores[turn] < self.n:
-            options.append(0)
+        options = []
+        for pos in positions:
+            new_pos = pos + roll
+            if new_pos < 12 and lane[new_pos] == 0:
+                options.append(pos)
+            elif new_pos == 12:
+                options.append(new_pos)
 
         return options
+
 
     def transition(self, state, action, roll):
         """
         Performs the transition to the next state
         """
-        turn, p1_score, p2_score, p1_blue, p2_blue, green = self.decode_state(state)
+        turn, board = self.decode_state(state)
+        p1_score = board[0, 2]
+        p2_score = board[2, 2]
+
+        p1_blue = board[0, self.blue_mask]
+        p2_blue = board[2, self.blue_mask]
+        green = board[1]
+
         player = turn + 1
-        scores = [p1_score, p2_score]
-        new_pos = action + roll
 
-        state_arr = []
-        if not turn:
-            state_arr = list(p1_blue[:4] + green + p1_blue[4:])
-        else:
-            state_arr = list(p2_blue[:4] + green + p2_blue[4:])
+        lane = np.concatenate((p1_blue[:4], green, p1_blue[4:])) \
+            if player ==1 else np.concatenate((p2_blue[:4], green, p2_blue[4:]))
 
-        if new_pos <= len(state_arr):
-            if new_pos == len(state_arr):
-                scores[turn] += 1
-                state_arr[action-1] = '0'
-            else:
-                if action == 0:
-                    state_arr[new_pos-1] = '1'
-                else:
-                    state_arr[action-1], state_arr[new_pos-1] = '0', '1'
-                    if 5 <= new_pos <= 12:
-                        state_arr[new_pos-1] = f'{player}'
-
-        if not turn:
-            p1_blue, temp = state_arr[:4], state_arr[4:]
-            green, p1_blue_end = temp[:8], temp[8:]
-            p1_blue += p1_blue_end
-        else:
-            p2_blue, temp = state_arr[:4], state_arr[4:]
-            green, p2_blue_end = temp[:8], temp[8:]
-            p2_blue += p2_blue_end
-
-        if new_pos not in self.rosettes:
-            turn = not turn
-
-        return self.encode_state(turn, p1_score, p2_score, ''.join(p1_blue), ''.join(p2_blue), ''.join(green))
+        positions = lane[lane == player]
 
     def reset(self):
         """
