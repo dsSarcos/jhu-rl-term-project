@@ -26,8 +26,8 @@ class BoardGame:
         self.blue_mask = [4, 5, 6, 7, 0, 1]
 
         self.lane_masks = [
-            [(0, 4), (0, 5), (0, 6), (0, 7), (1, 0), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (0, 0), (0, 1)],
-            [(2, 4), (2, 5), (2, 6), (2, 7), (1, 0), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (2, 0), (2, 1)],
+            np.array([(0, 4), (0, 5), (0, 6), (0, 7), (1, 0), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (0, 0), (0, 1)]),
+            np.array([(2, 4), (2, 5), (2, 6), (2, 7), (1, 0), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (2, 0), (2, 1)])
         ]
 
     def encode_state(self, turn, board):
@@ -51,6 +51,7 @@ class BoardGame:
         green_bin = '0'*(13-len(green_bin)) + green_bin
 
         bit_string = f'{turn}{p1_bin}{p2_bin}{p1_blue}{p2_blue}{green_bin}'
+        print(bit_string)
         assert len(bit_string) == 32, f'{len(bit_string)} {bit_string}'
 
         return int(bit_string)
@@ -77,66 +78,6 @@ class BoardGame:
         print(board.shape)
 
         return turn, board
-
-    def get_actions(self, state, roll):
-        turn, board = self.decode_state(state)
-        scores = (board[0, 2], board[2, 2])
-
-        # p1_blue = board[0, self.blue_mask]
-        # p2_blue = board[2, self.blue_mask]
-        # green = board[1]
-
-        player = turn + 1
-
-        # lane = np.concatenate((p1_blue[:4], green, p1_blue[4:])) \
-            # if player ==1 else np.concatenate((p2_blue[:4], green, p2_blue[4:]))
-
-        lane = board[self.lane_masks[turn]]
-
-        positions = lane[lane == player]
-
-        options = []
-        for pos in positions:
-            new_pos = pos + roll
-            if new_pos < 12 and lane[new_pos] != player:
-                options.append(pos)
-            elif new_pos == 12:
-                options.append(new_pos)
-
-        if scores[turn] != self.n:
-            options.append(-1)
-
-        return options
-
-    def transition(self, state, action, roll):
-        """
-        Performs the transition to the next state
-        """
-        turn, board = self.decode_state(state)
-        scores = (board[0, 2], board[2, 2])
-
-        # p1_blue = board[0, self.blue_mask]
-        # p2_blue = board[2, self.blue_mask]
-        # green = board[1]
-
-        player = turn + 1
-
-        lane = board[self.lane_masks[turn]]
-
-        new_pos = roll if action == -1 else action + roll
-
-        if new_pos == 12:
-            scores[turn] += 1
-            lane[action] = 0
-        else:
-            if lane[new_pos] != 0:
-                scores[not turn] -= 1
-            lane[new_pos] = player
-
-        turn = not turn
-
-        # return board
-        return self.encode_state(turn, board)
 
     def reset(self):
         """
