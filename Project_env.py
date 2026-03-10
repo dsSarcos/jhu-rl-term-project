@@ -5,6 +5,7 @@ from copy import deepcopy
 class BoardGame:
 
     def __init__(self):
+        self.n = 7
         self.start_state = np.array([
             [0, 0, 0, 7, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -25,6 +26,8 @@ class BoardGame:
         self.board = self.start_board
 
         self.reward = 0
+        self.rosettes = {0: (1, 7), 1: (4, ), 2: (1, 7)}
+        self.grid = self.create_grid()
 
     def encode_state(self, turn, board):
         # turn = self.turn
@@ -74,8 +77,6 @@ class BoardGame:
         print(board.shape)
 
         return turn, board
-        self.rosettes = {0: (1, 7), 1: (4, ), 2: (1, 7)}
-        self.grid = self.create_grid()
 
     def create_grid(self):
         grid = {}
@@ -150,7 +151,8 @@ class BoardGame:
         else:
             next_state[current_row, current_column] = 0
 
-        return next_state
+        next_turn = int(not bool(player_turn))
+        return next_state, next_turn
 
     def set_reward(self):
         """
