@@ -4,11 +4,17 @@ from copy import deepcopy
 
 class BoardGame:
 
-    def __init__(self, n=7):
-        if n > int('111', 2):
-            raise ValueError
-        self.n = n
-        self.start_state = 0
+    def __init__(self):
+        self.start_state = np.array([
+            [0, 0, 0, 7, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 7, 0, 0, 0, 0]
+        ])
+        self.p1_start = 3
+        self.p1_end = 2
+        self.p2_start = 19
+        self.p2_end = 18
+>>>>>>> origin
         self.state = self.start_state
 
         self.turn = 0
@@ -20,15 +26,6 @@ class BoardGame:
         self.board = self.start_board
 
         self.reward = 0
-        # self.rosettes = set([4, 8, 14])
-        self.rosettes = set([(0, 1), (0, 7), (1, 4), (2, 1), (2, 7)])
-
-        self.blue_mask = [4, 5, 6, 7, 0, 1]
-
-        self.lane_masks = [
-            np.array([(0, 4), (0, 5), (0, 6), (0, 7), (1, 0), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (0, 0), (0, 1)]),
-            np.array([(2, 4), (2, 5), (2, 6), (2, 7), (1, 0), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (2, 0), (2, 1)])
-        ]
 
     def encode_state(self, turn, board):
         # turn = self.turn
@@ -78,6 +75,25 @@ class BoardGame:
         print(board.shape)
 
         return turn, board
+=======
+        self.rosettes = {0: (1, 7), 1: (4, ), 2: (1, 7)}
+        self.grid = self.create_grid()
+
+    def create_grid(self):
+        grid = {}
+        i = 0
+        for j in range(self.start_state.shape[1]):
+            grid[i] = (0, j)
+            i += 1
+        for j in reversed(range(self.start_state.shape[1])):
+            grid[i] = (1, j)
+            i += 1
+        for j in range(self.start_state.shape[1]):
+            grid[i] = (2, j)
+            i += 1
+
+        return grid
+>>>>>>> origin
 
     def reset(self):
         """
@@ -97,6 +113,51 @@ class BoardGame:
 
         return self.state, self.reward, self.get_terminal_flag()
 
+<<<<<<< HEAD
+=======
+    def transition(self, previous_state, action, roll, player_turn=1):
+        """
+        Performs the transition to the next state
+        """
+
+        current_row, current_column = self.grid[action]
+
+        if player_turn == 1:
+            if action + roll > 15:
+                next_square_index = action + roll - 16
+            else:
+                next_square_index = action + roll
+        else:
+            if action + roll > 23:
+                next_square_index = action + roll - 16
+            else:
+                next_square_index = action + roll
+
+        next_row, next_column = self.grid[next_square_index]
+
+        next_state = previous_state.copy()
+        if player_turn == 1:
+            if next_state[next_row, next_column] == 2 and next_square_index != self.p1_end:
+                next_state[2, 3] += 1
+            if next_square_index != self.p1_end:
+                next_state[next_row, next_column] = 1
+        else:
+            if next_state[next_row, next_column] == 1 and next_square_index != self.p2_end:
+                next_state[0, 3] += 1
+            if next_square_index != self.p2_end:
+                next_state[next_row, next_column] = 2
+
+        if action == self.p1_start or action == self.p2_start:
+            next_state[current_row, current_column] -= 1
+        elif next_square_index == self.p1_end or next_square_index == self.p2_end:
+            next_state[next_row, next_column] += 1
+            next_state[current_row, current_column] = 0
+        else:
+            next_state[current_row, current_column] = 0
+
+        return next_state
+
+>>>>>>> origin
     def set_reward(self):
         """
         Sets the reward
