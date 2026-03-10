@@ -14,7 +14,6 @@ class BoardGame:
         self.p1_end = 2
         self.p2_start = 19
         self.p2_end = 18
->>>>>>> origin
         self.state = self.start_state
 
         self.turn = 0
@@ -75,7 +74,6 @@ class BoardGame:
         print(board.shape)
 
         return turn, board
-=======
         self.rosettes = {0: (1, 7), 1: (4, ), 2: (1, 7)}
         self.grid = self.create_grid()
 
@@ -93,7 +91,6 @@ class BoardGame:
             i += 1
 
         return grid
->>>>>>> origin
 
     def reset(self):
         """
@@ -113,8 +110,6 @@ class BoardGame:
 
         return self.state, self.reward, self.get_terminal_flag()
 
-<<<<<<< HEAD
-=======
     def transition(self, previous_state, action, roll, player_turn=1):
         """
         Performs the transition to the next state
@@ -157,7 +152,6 @@ class BoardGame:
 
         return next_state
 
->>>>>>> origin
     def set_reward(self):
         """
         Sets the reward
