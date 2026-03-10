@@ -27,7 +27,7 @@ class BoardGame:
 
         self.reward = 0
         self.rosettes = {0: (1, 7), 1: (4, ), 2: (1, 7)}
-        self.grid = self.create_grid()
+        self.grid, self.inverse_grid = self.create_grid()
 
     def encode_state(self, turn, board):
         # turn = self.turn
@@ -80,18 +80,22 @@ class BoardGame:
 
     def create_grid(self):
         grid = {}
+        grid_inv = {}
         i = 0
         for j in range(self.start_state.shape[1]):
             grid[i] = (0, j)
+            grid_inv[(0, j)] = i
             i += 1
         for j in reversed(range(self.start_state.shape[1])):
             grid[i] = (1, j)
+            grid_inv[(1, j)] = i
             i += 1
         for j in range(self.start_state.shape[1]):
             grid[i] = (2, j)
+            grid_inv[(2, j)] = i
             i += 1
 
-        return grid
+        return grid, grid_inv
 
     def reset(self):
         """
@@ -110,6 +114,17 @@ class BoardGame:
         """
 
         return self.state, self.reward, self.get_terminal_flag()
+
+    def get_actions(self, state, turn, roll):
+        rows, cols = state.shape
+
+        options = []
+        player = turn + 1
+        for i in rows:
+            for j in cols:
+                if (i, j) in self.inverse_grid.keys():
+                    if state[i, j] == player:
+                        options.append(self.inverse_grid[(i, j)])
 
     def transition(self, previous_state, action, roll, player_turn=1):
         """
