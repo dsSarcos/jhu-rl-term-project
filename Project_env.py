@@ -4,8 +4,8 @@ from copy import deepcopy
 
 class BoardGame:
 
-    def __init__(self):
-        self.n = 7
+    def __init__(self, n=7):
+        self.n = n
         self.start_state = np.array([
             [0, 0, 0, 7, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0],
@@ -125,6 +125,8 @@ class BoardGame:
         return self.state, self.reward, self.get_terminal_flag()
 
     def get_actions(self, state, turn, roll):
+        if roll == 0:
+            return []
         # print(state)
         player = int(turn) + 1
         idx = player if player == 2 else 0
@@ -135,18 +137,17 @@ class BoardGame:
                 (idx, 0), (idx, 1)]
 
         options = []
-        if roll > 0:
-            if state[starting] > 0 and state[lane[roll - 1]] != player:
-                options.append(starting)
+        if state[starting] > 0 and state[lane[roll - 1]] != player:
+            options.append(starting)
 
-            for i, position in enumerate(lane):
-                if state[position] == player:
-                    next_position = i + roll
+        for i, position in enumerate(lane):
+            if state[position] == player:
+                next_position = i + roll
 
-                    if next_position == len(lane):
-                        options.append(position)
-                    elif next_position < len(lane) and state[lane[next_position]] != player:
-                        options.append(position)
+                if next_position == len(lane):
+                    options.append(position)
+                elif next_position < len(lane) and state[lane[next_position]] != player:
+                    options.append(position)
 
         return [self.inverse_grid[opt] for opt in options]
 

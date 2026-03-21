@@ -2,14 +2,17 @@ import numpy as np
 from Project_env import BoardGame
 
 def main():
-    env = BoardGame()
+    env = BoardGame(2)
     turn = 0
 
-    frontier = [0]
+    frontier = set([0])
     explored = set()
 
     while frontier:
-        encoded_state = frontier.pop(0)
+        # encoded_state = frontier[0]
+        f = iter(frontier) # if this works, it'll be funny
+        encoded_state = next(f)
+        frontier.remove(encoded_state)
         turn, current_state = env.decode_state(encoded_state)
 
         children = []
@@ -19,7 +22,8 @@ def main():
                 next_turn, next_state = env.transition(current_state, action, roll, turn)
                 next_encoded_state = env.encode_state(next_turn, next_state)
                 if (next_encoded_state not in explored) and (next_encoded_state not in frontier):
-                    frontier.append(next_encoded_state)
+                    # frontier.append(next_encoded_state)
+                    frontier.add(next_encoded_state)
 
 
         if len(explored) % 1000 == 0:
