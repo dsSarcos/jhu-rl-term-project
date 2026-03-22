@@ -17,7 +17,8 @@ if __name__ == "__main__":
     )
     action = 3
     roll = 4
-    np.testing.assert_array_equal(env.transition(state, action, roll, player_turn=1), np.array(
+    turn, state = env.transition(state, action, roll, player_turn=0)
+    np.testing.assert_array_equal(state, np.array(
         [[0, 0, 0, 6, 0, 0, 0, 1],
          [0, 0, 0, 0, 0, 0, 0, 0],
          [0, 0, 0, 7, 0, 0, 0, 0]]
@@ -30,7 +31,8 @@ if __name__ == "__main__":
     )
     action = 7
     roll = 4
-    np.testing.assert_array_equal(env.transition(state, action, roll, player_turn=1), np.array(
+    turn, state = env.transition(state, action, roll, player_turn=0)
+    np.testing.assert_array_equal(state, np.array(
         [[0, 0, 0, 6, 0, 0, 0, 0],
          [0, 0, 0, 0, 1, 0, 0, 0],
          [0, 0, 0, 7, 0, 0, 0, 0]]
@@ -43,7 +45,8 @@ if __name__ == "__main__":
     )
     action = 15
     roll = 3
-    np.testing.assert_array_equal(env.transition(state, action, roll, player_turn=1), np.array(
+    turn, state = env.transition(state, action, roll, player_turn=0)
+    np.testing.assert_array_equal(state, np.array(
         [[0, 0, 1, 6, 0, 0, 0, 0],
          [0, 0, 0, 0, 0, 0, 0, 0],
          [0, 0, 0, 7, 0, 0, 0, 0]]
@@ -56,7 +59,8 @@ if __name__ == "__main__":
     )
     action = 14
     roll = 4
-    np.testing.assert_array_equal(env.transition(state, action, roll, player_turn=1), np.array(
+    turn, state = env.transition(state, action, roll, player_turn=0)
+    np.testing.assert_array_equal(state, np.array(
         [[0, 0, 2, 5, 0, 0, 0, 0],
          [0, 0, 0, 0, 0, 0, 0, 0],
          [0, 0, 0, 7, 0, 0, 0, 0]]
@@ -71,7 +75,8 @@ if __name__ == "__main__":
     )
     action = 19
     roll = 4
-    np.testing.assert_array_equal(env.transition(state, action, roll, player_turn=2), np.array(
+    turn, state = env.transition(state, action, roll, player_turn=1)
+    np.testing.assert_array_equal(state, np.array(
         [[0, 0, 0, 7, 0, 0, 0, 0],
          [0, 0, 0, 0, 0, 0, 0, 0],
          [0, 0, 0, 6, 0, 0, 0, 2]]
@@ -84,7 +89,8 @@ if __name__ == "__main__":
     )
     action = 23
     roll = 4
-    np.testing.assert_array_equal(env.transition(state, action, roll, player_turn=2), np.array(
+    turn, state = env.transition(state, action, roll, player_turn=1)
+    np.testing.assert_array_equal(state, np.array(
         [[0, 0, 0, 7, 0, 0, 0, 0],
          [0, 0, 0, 0, 2, 0, 0, 0],
          [0, 0, 0, 6, 0, 0, 0, 0]]
@@ -97,7 +103,8 @@ if __name__ == "__main__":
     )
     action = 15
     roll = 3
-    np.testing.assert_array_equal(env.transition(state, action, roll, player_turn=2), np.array(
+    turn, state = env.transition(state, action, roll, player_turn=1)
+    np.testing.assert_array_equal(state, np.array(
         [[0, 0, 0, 7, 0, 0, 0, 0],
          [0, 0, 0, 0, 0, 0, 0, 0],
          [0, 0, 1, 6, 0, 0, 0, 0]]
@@ -110,7 +117,8 @@ if __name__ == "__main__":
     )
     action = 14
     roll = 4
-    np.testing.assert_array_equal(env.transition(state, action, roll, player_turn=2), np.array(
+    turn, state = env.transition(state, action, roll, player_turn=1)
+    np.testing.assert_array_equal(state, np.array(
         [[0, 0, 0, 7, 0, 0, 0, 0],
          [0, 0, 0, 0, 0, 0, 0, 0],
          [0, 0, 2, 5, 0, 0, 0, 0]]
@@ -125,7 +133,8 @@ if __name__ == "__main__":
     )
     action = 12
     roll = 2
-    np.testing.assert_array_equal(env.transition(state, action, roll, player_turn=1), np.array(
+    turn, state = env.transition(state, action, roll, player_turn=0)
+    np.testing.assert_array_equal(state, np.array(
         [[0, 0, 0, 6, 0, 0, 0, 0],
          [0, 1, 0, 0, 0, 0, 0, 0],
          [0, 0, 1, 6, 0, 0, 0, 0]]
@@ -139,8 +148,32 @@ if __name__ == "__main__":
     )
     action = 12
     roll = 2
-    np.testing.assert_array_equal(env.transition(state, action, roll, player_turn=2), np.array(
+    turn, state = env.transition(state, action, roll, player_turn=1)
+    np.testing.assert_array_equal(state, np.array(
         [[0, 0, 0, 7, 0, 0, 0, 0],
          [0, 2, 0, 0, 0, 0, 0, 0],
          [0, 0, 1, 5, 0, 0, 0, 0]]
     ))
+
+    # Scoring
+    state = np.array(
+        [[0, 1, 0, 6, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0, 0, 0, 0],
+         [0, 0, 0, 7, 0, 0, 0, 0]]
+    )
+    action = env.inverse_grid[(0, 1)]
+    roll = 1
+    turn, state = env.transition(state, action, roll, player_turn=0)
+    np.testing.assert_array_equal(state, np.array(
+        [[0, 0, 1, 6, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0, 0, 0, 0],
+         [0, 0, 0, 7, 0, 0, 0, 0]]
+    ))
+
+    # Scoring
+    state = np.array(
+        [[0, 1, 0, 6, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0, 0, 0, 0],
+         [0, 0, 0, 7, 0, 0, 0, 0]]
+    )
+    assert env.inverse_grid[(0, 1)] in env.get_actions(state, 0, 1)
