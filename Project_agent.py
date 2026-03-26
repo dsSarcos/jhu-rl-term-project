@@ -96,7 +96,7 @@ class QLearner(RLAgent):
             reward, game_end, current_state = np.nan, False, environment.get_state()
 
             while not game_end:
-                actions_indices = environment.get_state()
+                actions_indices = environment.get_actions()
                 action = self.select_action(current_state, actions_indices)
 
                 self.update_trajectory_table(reward, current_state, action)
@@ -120,3 +120,24 @@ class SARSA(RLAgent):
         self.q_table[s][a] = self.q_table[s][a] + self.alpha * (
                 r + self.gamma * self.q_table[s_][a_] - self.q_table[s][a])
 
+    def play_episodes(self, environment, number_of_episodes):
+        for i in range(0, number_of_episodes):
+            reward, game_end, current_state = np.nan, False, environment.get_state()
+            actions_indices = environment.get_actions()
+            current_action = self.select_action(actions_indices)
+
+            while not game_end:
+                actions_indices = environment.get_actions()
+                next_action = self.select_action(current_state, actions_indices)
+
+                self.update_trajectory_table(reward, current_state, current_action)
+                next_state, reward, game_end = environment.execute_action(current_action)
+                if self.enable_learning is True:
+                    self.update_q_table(current_state, current_action, reward, next_state, next_action)
+                current_state = next_state
+                current_action = next_action
+
+            self.update_trajectory_table(reward, current_state, np.nan)
+            self.calculate_episode_return(i)
+            self.clear_trajectory_table()
+            environment.reset()
