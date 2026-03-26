@@ -46,7 +46,7 @@ class BoardGame:
         p2_bin = '0'*(3-len(p2_bin)) + p2_bin
         green_bin = '0'*(13-len(green_bin)) + green_bin
 
-        bit_string = f'{int(turn)}{p1_bin}{p2_bin}{p1_blue}{p2_blue.replace('2','1')}{green_bin}'
+        bit_string = f"{int(turn)}{p1_bin}{p2_bin}{p1_blue}{p2_blue.replace('2','1')}{green_bin}"
         # print(f'binary: {bit_string}')
         assert len(bit_string) == 32, f'{len(bit_string)} {bit_string}'
 
