@@ -76,17 +76,21 @@ class RLAgent:
         return np.random.choice(actions, p=prime_action_probs)
 
     def select_action(self, state, actions_indices):
-        actions = self.q_table[state]
-        action_values = actions[actions_indices]
-        prime_action = self.get_prime_action(actions, action_values, actions_indices)
-        other_actions = np.array([i for i in range(len(action_values)) if i != prime_action])
+        action_value_array = self.q_table[state]
+        available_action_values = action_value_array[actions_indices]
+
+        prime_action = self.get_prime_action(action_value_array, available_action_values, actions_indices)
+        all_actions = [i for i in range(len(available_action_values)) if i != prime_action]
 
         self.prob_prime = 1 - self.eps + (self.eps / len(actions_indices))
         self.prob_sub_prime = self.eps / len(actions_indices)
 
-        action_probs = [self.prob_prime, self.prob_sub_prime, self.prob_sub_prime, self.prob_sub_prime]
-        actions = [prime_action, other_actions[0], other_actions[1], other_actions[2]]
-        self.action = np.random.choice(actions, p=action_probs)
+        action_probs = [self.prob_sub_prime for _ in range(len(all_actions))]
+        action_probs.append(self.prob_prime)
+
+        all_actions.append(prime_action)
+
+        self.action = np.random.choice(all_actions, p=action_probs)
 
         return self.action
 
