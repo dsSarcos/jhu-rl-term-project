@@ -59,17 +59,26 @@ class RLAgent:
         self.trajectory_table = np.empty((0, 3))
 
     @staticmethod
-    def get_prime_action(action_values):
+    def get_prime_action(actions, action_values, actions_indices):
         prime_action = np.argmax(action_values)
         prime_value = action_values[prime_action]
-        prime_actions = [i for i in range(len(action_values)) if action_values[i] == prime_value]
 
-        return np.random.choice(prime_actions)
+        prime_actions = action_values[action_values == prime_value]
+        prob = 1/len(prime_actions)
+
+        prime_action_probs = []
+        for i in range(len(actions)):
+            if i in actions_indices and actions[i] == prime_value:
+                prime_action_probs.append(prob)
+            else:
+                prime_action_probs.append(0.0)
+
+        return np.random.choice(actions, p=prime_action_probs)
 
     def select_action(self, state, actions_indices):
         actions = self.q_table[state]
         action_values = actions[actions_indices]
-        prime_action = self.get_prime_action(action_values)
+        prime_action = self.get_prime_action(actions, action_values, actions_indices)
         other_actions = np.array([i for i in range(len(action_values)) if i != prime_action])
 
         self.prob_prime = 1 - self.eps + (self.eps / len(actions_indices))
@@ -124,7 +133,7 @@ class SARSA(RLAgent):
         for i in range(0, number_of_episodes):
             reward, game_end, current_state = np.nan, False, environment.get_state()
             actions_indices = environment.get_actions()
-            current_action = self.select_action(actions_indices)
+            current_action = self.select_action(current_state, actions_indices)
 
             while not game_end:
                 actions_indices = environment.get_actions()
