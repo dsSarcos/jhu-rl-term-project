@@ -6,11 +6,7 @@ class BoardGame:
 
     def __init__(self, n=7):
         self.n = n
-        self.start_state = np.array([
-            [0, 0, 0, 7, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 7, 0, 0, 0, 0]
-        ])
+
         self.p1_start = 3
         self.p1_end = 2
         self.p2_start = 19
@@ -110,19 +106,26 @@ class BoardGame:
         """
         Resets the environment to the beginning of the episode.
         """
-        self.board_state = deepcopy(self.start_state)
+        self.board = deepcopy(self.start_board)
 
-        return self.board_state
+        return self.board
 
-    def execute_action(self, action):
+    def execute_action(self, previous_state, action, player_turn=0, roll=np.random.choice([0, 1, 2, 3, 4], [1/16, 1/4, 3/8, 1/4, 1/16])):
         """
+        Interface: execute_action(previous_state, action, turn)
+
         Execute the action given by action. Causes the next state to be
         determined, the state of the environment to be updated, and the
         applicable reward to be calculated. Returns the new state, the reward, and the
         terminal flag (in that order)
         """
 
-        return self.state, self.reward, self.get_terminal_flag()
+        if action < 8:
+            action = action if player_turn == 0 else action + 16
+
+        next_turn, next_state = self.transition(previous_state, action, roll, player_turn=0)
+
+        return next_state, next_turn, self.get_terminal_flag()
 
     def get_actions(self, state, turn, roll):
         if roll == 0:
@@ -194,16 +197,18 @@ class BoardGame:
         next_turn = int(not player_turn)
         return next_turn, next_state
 
-    def set_reward(self):
+    def set_reward(self, state, player):
         """
         Sets the reward
+        TODO
         """
-        if self.state[0, 3] == 7:
-            self.reward = 1
-        elif self.state[2, 3] == 7:
-            self.reward = -1
+        idx,  = player if player == 2 else 0
+        if state[idx, 3] == self.n:
+            return 1
+        elif state[idx, 3] == self.n:
+            return -1
         else:
-            self.reward = 0
+            return 0
 
     def set_state(self, state):
         """
@@ -215,7 +220,7 @@ class BoardGame:
         """
         Returns true if the current state is a terminal state, and false otherwise
         """
-        if self.state[0, 3] == 7 or self.state[2, 3] == 7:
+        if self.state[0, 3] == self.n or self.state[2, 3] == self.n:
             return True
         else:
             return False
