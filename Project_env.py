@@ -11,9 +11,7 @@ class BoardGame:
         self.p1_end = 2
         self.p2_start = 19
         self.p2_end = 18
-        self.state = self.start_state
 
-        self.turn = 0
         self.start_board = np.array([
                 [0, 0, 0, self.n, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -21,7 +19,6 @@ class BoardGame:
         ])
         self.board = self.start_board.copy()
 
-        self.reward = 0
         self.rosettes = {0: (1, 7), 1: (4, ), 2: (1, 7)}
         self.grid, self.inverse_grid = self.create_grid()
 
@@ -87,28 +84,20 @@ class BoardGame:
         grid = {}
         grid_inv = {}
         i = 0
-        for j in range(self.start_state.shape[1]):
+        for j in range(self.start_board.shape[1]):
             grid[i] = (0, j)
             grid_inv[(0, j)] = i
             i += 1
-        for j in reversed(range(self.start_state.shape[1])):
+        for j in reversed(range(self.start_board.shape[1])):
             grid[i] = (1, j)
             grid_inv[(1, j)] = i
             i += 1
-        for j in range(self.start_state.shape[1]):
+        for j in range(self.start_board.shape[1]):
             grid[i] = (2, j)
             grid_inv[(2, j)] = i
             i += 1
 
         return grid, grid_inv
-
-    def reset(self):
-        """
-        Resets the environment to the beginning of the episode.
-        """
-        self.board = deepcopy(self.start_board)
-
-        return self.board
 
     def execute_action(self, previous_state, action, player_turn=0, roll=np.random.choice([0, 1, 2, 3, 4], [1/16, 1/4, 3/8, 1/4, 1/16])):
         """
@@ -204,24 +193,6 @@ class BoardGame:
 
         next_turn = int(not player_turn)
         return next_turn, next_state
-
-    def set_reward(self, state):
-        """
-        Sets the reward
-        TODO
-        """
-        if state[0, 3] == self.n:
-            return 1
-        elif state[2, 3] == self.n:
-            return -1
-        else:
-            return 0
-
-    def set_state(self, state):
-        """
-        Permits the state value to be set
-        """
-        self.state = state
 
     def get_terminal_flag(self):
         """
