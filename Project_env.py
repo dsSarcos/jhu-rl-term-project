@@ -120,12 +120,20 @@ class BoardGame:
         terminal flag (in that order)
         """
 
-        if action < 8:
-            action = action if player_turn == 0 else action + 16
+        reward, terminal_flag = 0, False
 
         next_turn, next_state = self.transition(previous_state, action, roll, player_turn=0)
+        if self.get_terminal_flag() is True:
+            reward = 1
+        else:
+            roll = np.random.choice([0, 1, 2, 3, 4], [1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
+            action = np.random.choice(self.get_actions(next_state, 1, roll))
+            _, next_state = self.transition(next_state, action, roll, player_turn=1)
 
-        return next_state, next_turn, self.get_terminal_flag()
+            if self.get_terminal_flag() is True:
+                reward = -1
+
+        return next_state, reward, terminal_flag
 
     def get_actions(self, state, turn, roll):
         if roll == 0:
@@ -197,15 +205,14 @@ class BoardGame:
         next_turn = int(not player_turn)
         return next_turn, next_state
 
-    def set_reward(self, state, player):
+    def set_reward(self, state):
         """
         Sets the reward
         TODO
         """
-        idx,  = player if player == 2 else 0
-        if state[idx, 3] == self.n:
+        if state[0, 3] == self.n:
             return 1
-        elif state[idx, 3] == self.n:
+        elif state[2, 3] == self.n:
             return -1
         else:
             return 0

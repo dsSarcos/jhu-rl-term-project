@@ -73,7 +73,7 @@ class RLAgent:
             else:
                 prime_action_probs.append(0.0)
 
-        return np.random.choice(actions, p=prime_action_probs)
+        return np.random.choice(len(actions), p=prime_action_probs)
 
     def select_action(self, state, actions_indices):
         action_value_array = self.q_table[state]
@@ -90,7 +90,7 @@ class RLAgent:
 
         all_actions.append(prime_action)
 
-        self.action = np.random.choice(all_actions, p=action_probs)
+        self.action = np.random.choice(len(all_actions), p=action_probs)
 
         return self.action
 
