@@ -55,6 +55,9 @@ class RLAgent:
     def calculate_episode_return(self, episode):
         self.learning_returns[episode] = sum(self.trajectory_table[1:, 0])
 
+    def extract_returns_per_episode(self):
+        return self.learning_returns
+
     def clear_trajectory_table(self):
         self.trajectory_table = np.empty((0, 3))
 

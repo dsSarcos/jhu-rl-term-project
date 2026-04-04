@@ -4,7 +4,8 @@ from copy import deepcopy
 
 class BoardGame:
 
-    def __init__(self, n=7):
+    def __init__(self, n=7, print_states=False):
+        self.print_states = print_states
         self.n = n
 
         self.p1_start = 3
@@ -21,6 +22,7 @@ class BoardGame:
 
         self.rosettes = {0: (1, 7), 1: (4, ), 2: (1, 7)}
         self.grid, self.inverse_grid = self.create_grid()
+        self.state = self.start_board
 
     def encode_state(self, turn, board):
         turn = int(turn)
@@ -99,7 +101,7 @@ class BoardGame:
 
         return grid, grid_inv
 
-    def execute_action(self, previous_state, action, player_turn=0, roll=np.random.choice([0, 1, 2, 3, 4], [1/16, 1/4, 3/8, 1/4, 1/16])):
+    def execute_action(self, previous_state, action, player_turn=0, roll=np.random.choice([0, 1, 2, 3, 4], p=[1/16, 1/4, 3/8, 1/4, 1/16])):
         """
         Interface: execute_action(previous_state, action, turn)
 
@@ -192,6 +194,11 @@ class BoardGame:
             next_state[current_row, current_column] = 0
 
         next_turn = int(not player_turn)
+        self.state = next_state
+
+        if self.print_states is True:
+            print(self.state)
+
         return next_turn, next_state
 
     def get_terminal_flag(self):
