@@ -25,6 +25,9 @@ class RLAgent:
         self.eps_min = 0.0
         self.enable_learning = True
 
+        lane = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1]
+        self.a2q = {x: y for x, y in zip(lane, np.arange(15))}
+        
     def disable(self):
         self.enable_learning = False
 
@@ -92,7 +95,7 @@ class RLAgent:
         # print("Turn = ", self.turn)
         self.state = state
         # print("State = ", self.state)
-        actions = self.q_table[state][action_indices]
+        actions = self.q_table[state][[self.a2q[x] for x in action_indices]]
         action = self.e_greedy(actions)
         self.action = action_indices[action]
         return self.action
@@ -104,8 +107,9 @@ class QLearner(RLAgent):
         super().__init__(*args, **kwargs)
 
     def update_q_table(self, s, a, r, s_):
-        self.q_table[s][a] = self.q_table[s][a] + self.alpha * (
-                r + self.gamma * self.q_table[s_].max() - self.q_table[s][a])
+        aq = self.a2q[a]
+        self.q_table[s][aq] = self.q_table[s][aq] + self.alpha * (
+                r + self.gamma * self.q_table[s_].max() - self.q_table[s][aq])
 
     def play_episodes(self, environment, number_of_episodes):
         for i in range(0, number_of_episodes):
@@ -119,7 +123,7 @@ class QLearner(RLAgent):
                     encoded_state = environment.encode_state(0, current_state)
                     action = self.select_action(encoded_state, actions_indices)
 
-                    self.update_trajectory_table(reward, encoded_state, action)
+                    self.update_trajectory_table(reward, encoded_state, self.a2q[action])
                     next_state, reward, game_end = environment.execute_action(current_state, action, roll=roll)
                     if self.enable_learning is True:
                         self.update_q_table(encoded_state,
@@ -129,9 +133,9 @@ class QLearner(RLAgent):
                     current_state = next_state
 
             self.update_trajectory_table(reward, encoded_state, np.nan)
-            self.calculate_episode_return(i)
+            # self.calculate_episode_return(i)
             self.clear_trajectory_table()
-            environment.reset()
+            # environment.reset()
 
 
 class SARSA(RLAgent):

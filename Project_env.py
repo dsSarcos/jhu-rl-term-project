@@ -193,12 +193,12 @@ class BoardGame:
             next_state[current_row, current_column] = 0
 
         next_turn = int(not player_turn)
-        self.board = next_state
+        board = next_state
 
         if self.print_states is True:
-            print(self.board)
+            print(board)
 
-        return next_turn, self.board
+        return next_turn, board
 
     def get_terminal_flag(self):
         """
