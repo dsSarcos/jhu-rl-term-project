@@ -56,7 +56,7 @@ class RLAgent:
         self.trajectory_table = np.append(self.trajectory_table, np.array([[r, s, a]]), axis=0)
 
     def calculate_episode_return(self, episode):
-        self.learning_returns[episode] = sum(self.trajectory_table[1:, 0])
+        self.learning_returns[episode] = self.trajectory_table[-1, 0]
 
     def extract_returns_per_episode(self):
         return self.learning_returns
@@ -65,16 +65,13 @@ class RLAgent:
         self.trajectory_table = np.empty((0, 3))
 
     @staticmethod
-    def get_prime_action(actions, action_values, actions_indices):
-        prime_action = np.argmax(action_values)
-        prime_value = action_values[prime_action]
-
-        prime_actions = action_values[action_values == prime_value]
-        prob = 1/len(prime_actions)
+    def get_prime_action(actions, prime_action):
+        prime_value = actions[prime_action]
+        prob = 1/np.count_nonzero(actions == prime_value)
 
         prime_action_probs = []
-        for i in range(len(actions)):
-            if i in actions_indices and actions[i] == prime_value:
+        for action_value in actions:
+            if action_value == prime_value:
                 prime_action_probs.append(prob)
             else:
                 prime_action_probs.append(0.0)
@@ -83,6 +80,9 @@ class RLAgent:
 
     def e_greedy(self, actions):
         a_star_idx = np.argmax(actions)
+        if np.count_nonzero(actions == actions[a_star_idx]) > 1:
+            a_star_idx = self.get_prime_action(actions, a_star_idx)
+
         rng = np.random.default_rng()
         if self.eps <= rng.random():
             return a_star_idx
@@ -133,9 +133,8 @@ class QLearner(RLAgent):
                     current_state = next_state
 
             self.update_trajectory_table(reward, encoded_state, np.nan)
-            # self.calculate_episode_return(i)
+            self.calculate_episode_return(i)
             self.clear_trajectory_table()
-            # environment.reset()
 
 
 class SARSA(RLAgent):
