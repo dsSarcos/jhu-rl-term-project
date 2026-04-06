@@ -18,7 +18,6 @@ class BoardGame:
                 [0, 0, 0,      0, 0, 0, 0, 0],
                 [0, 0, 0, self.n, 0, 0, 0, 0]
         ])
-        self.board = self.start_board.copy()
 
         self.rosettes = {0: (1, 7), 1: (4, ), 2: (1, 7)}
         self.grid, self.inverse_grid = self.create_grid()
@@ -111,7 +110,7 @@ class BoardGame:
         """
         reward = 0
         _, next_state = self.transition(previous_state, action, roll, player_turn=0)
-        if self.get_terminal_flag() is True:
+        if self.get_terminal_flag(next_state) is True:
             reward = 1
         else:
             roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
@@ -120,10 +119,24 @@ class BoardGame:
                 action = np.random.choice(p2_actions)
                 _, next_state = self.transition(next_state, action, roll, player_turn=1)
 
-            if self.get_terminal_flag() is True:
+            if self.get_terminal_flag(next_state) is True:
                 reward = -1
 
-        return next_state, reward, self.get_terminal_flag()
+        return next_state, reward, self.get_terminal_flag(next_state)
+
+    def play_turn(self, previous_state):
+        reward = 0
+        roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
+        p2_actions = self.get_actions(previous_state, 1, roll)
+        if p2_actions:
+            action = np.random.choice(p2_actions)
+            _, next_state = self.transition(previous_state, action, roll, player_turn=1)
+            if self.get_terminal_flag(next_state) is True:
+                reward = -1
+        else:
+            next_state = previous_state
+
+        return next_state, reward, self.get_terminal_flag(next_state)
 
     def get_actions(self, state, turn, roll):
         if roll == 0:
@@ -200,11 +213,11 @@ class BoardGame:
 
         return next_turn, board
 
-    def get_terminal_flag(self):
+    def get_terminal_flag(self, board):
         """
         Returns true if the current state is a terminal state, and false otherwise
         """
-        if self.board[0, 2] == self.n or self.board[2, 2] == self.n:
+        if board[0, 2] == self.n or board[2, 2] == self.n:
             return True
         else:
             return False
