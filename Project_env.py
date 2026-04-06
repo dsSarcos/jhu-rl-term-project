@@ -14,9 +14,9 @@ class BoardGame:
         self.p2_end = 18
 
         self.start_board = np.array([
-                [0, 0, 0, self.n, 0, 0, 0, 0, 0],
-                [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                [0, 0, 0, self.n, 0, 0, 0, 0, 0]
+                [0, 0, 0, self.n, 0, 0, 0, 0],
+                [0, 0, 0,      0, 0, 0, 0, 0],
+                [0, 0, 0, self.n, 0, 0, 0, 0]
         ])
         self.board = self.start_board.copy()
 
@@ -109,22 +109,21 @@ class BoardGame:
         applicable reward to be calculated. Returns the new state, the reward, and the
         terminal flag (in that order)
         """
-        _, decoded_state = self.decode_state(previous_state)
         reward = 0
-        next_turn, next_state = self.transition(decoded_state, action, roll, player_turn=0)
+        _, next_state = self.transition(previous_state, action, roll, player_turn=0)
         if self.get_terminal_flag() is True:
             reward = 1
         else:
             roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
-            action = np.random.choice(self.get_actions(next_state, 1, roll))
-            _, next_state = self.transition(next_state, action, roll, player_turn=1)
+            p2_actions = self.get_actions(next_state, 1, roll)
+            if p2_actions:
+                action = np.random.choice(p2_actions)
+                _, next_state = self.transition(next_state, action, roll, player_turn=1)
 
             if self.get_terminal_flag() is True:
                 reward = -1
 
-        encoded_state = self.encode_state(player_turn, next_state)
-
-        return encoded_state, reward, self.get_terminal_flag()
+        return next_state, reward, self.get_terminal_flag()
 
     def get_actions(self, state, turn, roll):
         if roll == 0:
@@ -205,10 +204,7 @@ class BoardGame:
         """
         Returns true if the current state is a terminal state, and false otherwise
         """
-        if self.board[0, 3] == self.n or self.board[2, 3] == self.n:
+        if self.board[0, 2] == self.n or self.board[2, 2] == self.n:
             return True
         else:
             return False
-
-    def get_state(self):
-        return self.encode_state(self.board)

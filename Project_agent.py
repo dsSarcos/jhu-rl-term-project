@@ -78,23 +78,23 @@ class RLAgent:
 
         return np.random.choice(len(actions), p=prime_action_probs)
 
-    def select_action(self, state, actions_indices):
-        action_value_array = self.q_table[state]
-        available_action_values = action_value_array[actions_indices]
+    def e_greedy(self, actions):
+        a_star_idx = np.argmax(actions)
+        rng = np.random.default_rng()
+        if self.eps <= rng.random():
+            return a_star_idx
+        else:
+            b = actions.size
+            idx = rng.integers(low=0, high=b)
+            return idx
 
-        prime_action = self.get_prime_action(action_value_array, available_action_values, actions_indices)
-        all_actions = [i for i in range(len(available_action_values)) if i != prime_action]
-
-        self.prob_prime = 1 - self.eps + (self.eps / len(actions_indices))
-        self.prob_sub_prime = self.eps / len(actions_indices)
-
-        action_probs = [self.prob_sub_prime for _ in range(len(all_actions))]
-        action_probs.append(self.prob_prime)
-
-        all_actions.append(prime_action)
-
-        self.action = np.random.choice(len(all_actions), p=action_probs)
-
+    def select_action(self, state, action_indices):
+        # print("Turn = ", self.turn)
+        self.state = state
+        # print("State = ", self.state)
+        actions = self.q_table[state][action_indices]
+        action = self.e_greedy(actions)
+        self.action = action_indices[action]
         return self.action
 
 
@@ -109,19 +109,26 @@ class QLearner(RLAgent):
 
     def play_episodes(self, environment, number_of_episodes):
         for i in range(0, number_of_episodes):
-            reward, game_end, current_state = np.nan, False, environment.get_state()
+            reward, game_end, current_state = np.nan, False, environment.start_board
+            encoded_state = None
 
             while not game_end:
-                actions_indices = environment.get_actions()
-                action = self.select_action(current_state, actions_indices)
+                roll = np.random.choice([0, 1, 2, 3, 4], p=[1/16, 1/4, 3/8, 1/4, 1/16])
+                actions_indices = environment.get_actions(current_state, 0, roll)
+                if actions_indices:
+                    encoded_state = environment.encode_state(0, current_state)
+                    action = self.select_action(encoded_state, actions_indices)
 
-                self.update_trajectory_table(reward, current_state, action)
-                next_state, reward, game_end = environment.execute_action(current_state, action)
-                if self.enable_learning is True:
-                    self.update_q_table(current_state, action, reward, next_state)
-                current_state = next_state
+                    self.update_trajectory_table(reward, encoded_state, action)
+                    next_state, reward, game_end = environment.execute_action(current_state, action, roll=roll)
+                    if self.enable_learning is True:
+                        self.update_q_table(encoded_state,
+                                            action,
+                                            reward,
+                                            environment.encode_state(0, next_state))
+                    current_state = next_state
 
-            self.update_trajectory_table(reward, current_state, np.nan)
+            self.update_trajectory_table(reward, encoded_state, np.nan)
             self.calculate_episode_return(i)
             self.clear_trajectory_table()
             environment.reset()
@@ -138,18 +145,26 @@ class SARSA(RLAgent):
 
     def play_episodes(self, environment, number_of_episodes):
         for i in range(0, number_of_episodes):
-            reward, game_end, current_state = np.nan, False, environment.get_state()
-            actions_indices = environment.get_actions()
-            current_action = self.select_action(current_state, actions_indices)
+            reward, game_end, current_state = np.nan, False, environment.start_board
+
+            roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
+            actions_indices = environment.get_actions(current_state, 0, roll)
+            current_action = self.select_action(environment.encode_state(0, current_state), actions_indices)
 
             while not game_end:
-                actions_indices = environment.get_actions()
+                # Refactor into expected SARSA - Off Policy TD Learning
+                roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
+                actions_indices = environment.get_actions(current_state, 0, roll)
                 next_action = self.select_action(current_state, actions_indices)
 
                 self.update_trajectory_table(reward, current_state, current_action)
                 next_state, reward, game_end = environment.execute_action(current_state, current_action)
                 if self.enable_learning is True:
-                    self.update_q_table(current_state, current_action, reward, next_state, next_action)
+                    self.update_q_table(environment.encode_state(0, current_state),
+                                        current_action,
+                                        reward,
+                                        next_state,
+                                        next_action)
                 current_state = next_state
                 current_action = next_action
 
