@@ -22,7 +22,6 @@ class BoardGame:
 
         self.rosettes = {0: (1, 7), 1: (4, ), 2: (1, 7)}
         self.grid, self.inverse_grid = self.create_grid()
-        self.state = self.start_board
 
     def encode_state(self, turn, board):
         turn = int(turn)
@@ -110,21 +109,22 @@ class BoardGame:
         applicable reward to be calculated. Returns the new state, the reward, and the
         terminal flag (in that order)
         """
-
-        reward, terminal_flag = 0, False
-
-        next_turn, next_state = self.transition(previous_state, action, roll, player_turn=0)
+        _, decoded_state = self.decode_state(previous_state)
+        reward = 0
+        next_turn, next_state = self.transition(decoded_state, action, roll, player_turn=0)
         if self.get_terminal_flag() is True:
             reward = 1
         else:
-            roll = np.random.choice([0, 1, 2, 3, 4], [1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
+            roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
             action = np.random.choice(self.get_actions(next_state, 1, roll))
             _, next_state = self.transition(next_state, action, roll, player_turn=1)
 
             if self.get_terminal_flag() is True:
                 reward = -1
 
-        return next_state, reward, terminal_flag
+        encoded_state = self.encode_state(player_turn, next_state)
+
+        return encoded_state, reward, self.get_terminal_flag()
 
     def get_actions(self, state, turn, roll):
         if roll == 0:
@@ -194,18 +194,21 @@ class BoardGame:
             next_state[current_row, current_column] = 0
 
         next_turn = int(not player_turn)
-        self.state = next_state
+        self.board = next_state
 
         if self.print_states is True:
-            print(self.state)
+            print(self.board)
 
-        return next_turn, next_state
+        return next_turn, self.board
 
     def get_terminal_flag(self):
         """
         Returns true if the current state is a terminal state, and false otherwise
         """
-        if self.state[0, 3] == self.n or self.state[2, 3] == self.n:
+        if self.board[0, 3] == self.n or self.board[2, 3] == self.n:
             return True
         else:
             return False
+
+    def get_state(self):
+        return self.encode_state(self.board)

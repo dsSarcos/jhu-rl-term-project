@@ -116,7 +116,7 @@ class QLearner(RLAgent):
                 action = self.select_action(current_state, actions_indices)
 
                 self.update_trajectory_table(reward, current_state, action)
-                next_state, reward, game_end = environment.execute_action(action)
+                next_state, reward, game_end = environment.execute_action(current_state, action)
                 if self.enable_learning is True:
                     self.update_q_table(current_state, action, reward, next_state)
                 current_state = next_state
@@ -147,7 +147,7 @@ class SARSA(RLAgent):
                 next_action = self.select_action(current_state, actions_indices)
 
                 self.update_trajectory_table(reward, current_state, current_action)
-                next_state, reward, game_end = environment.execute_action(current_action)
+                next_state, reward, game_end = environment.execute_action(current_state, current_action)
                 if self.enable_learning is True:
                     self.update_q_table(current_state, current_action, reward, next_state, next_action)
                 current_state = next_state
