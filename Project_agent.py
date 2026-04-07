@@ -21,7 +21,7 @@ class RLAgent:
         self.N = 0
         self.n_step = -1
         self.eps_max = 0.0
-        self.eps_min = 0.0
+        self.eps_min = 0.01
         self.enable_learning = True
 
         lane = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1]
@@ -70,8 +70,13 @@ class RLAgent:
         if np.count_nonzero(actions == actions[a_star_idx]) > 1:
             a_star_idx = self.get_prime_action(actions, a_star_idx)
 
+        eps = self.eps
+        if self.eps_min:
+            r = max((50000-100000)/50000, 0)
+            eps = (self.eps - self.eps_min)*r + self.eps_min
+
         rng = np.random.default_rng()
-        if self.eps <= rng.random():
+        if eps <= rng.random():
             return a_star_idx
         else:
             b = actions.size

@@ -186,6 +186,7 @@ class BoardGame:
         next_row, next_column = self.grid[next_square_index]
 
         next_state = previous_state.copy()
+        # next_state = previous_state
         if player_turn == 0:
             if next_state[next_row, next_column] == 2 and next_square_index != self.p1_end:
                 next_state[2, 3] += 1
