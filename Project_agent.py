@@ -128,6 +128,7 @@ class QLearner(RLAgent):
                 current_state = next_state
 
             self.returns.append(reward)
+            environment.reset()
 
 
 class SARSA(RLAgent):

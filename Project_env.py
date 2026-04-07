@@ -185,34 +185,28 @@ class BoardGame:
 
         next_row, next_column = self.grid[next_square_index]
 
-        next_state = previous_state.copy()
-        # next_state = previous_state
         if player_turn == 0:
-            if next_state[next_row, next_column] == 2 and next_square_index != self.p1_end:
-                next_state[2, 3] += 1
+            if previous_state[next_row, next_column] == 2 and next_square_index != self.p1_end:
+                previous_state[2, 3] += 1
             if next_square_index != self.p1_end:
-                next_state[next_row, next_column] = 1
+                previous_state[next_row, next_column] = 1
         else:
-            if next_state[next_row, next_column] == 1 and next_square_index != self.p2_end:
-                next_state[0, 3] += 1
+            if previous_state[next_row, next_column] == 1 and next_square_index != self.p2_end:
+                previous_state[0, 3] += 1
             if next_square_index != self.p2_end:
-                next_state[next_row, next_column] = 2
+                previous_state[next_row, next_column] = 2
 
         if action == self.p1_start or action == self.p2_start:
-            next_state[current_row, current_column] -= 1
+            previous_state[current_row, current_column] -= 1
         elif next_square_index == self.p1_end or next_square_index == self.p2_end:
-            next_state[next_row, next_column] += 1
-            next_state[current_row, current_column] = 0
+            previous_state[next_row, next_column] += 1
+            previous_state[current_row, current_column] = 0
         else:
-            next_state[current_row, current_column] = 0
+            previous_state[current_row, current_column] = 0
 
         next_turn = int(not player_turn)
-        board = next_state
 
-        if self.print_states is True:
-            print(board)
-
-        return next_turn, board
+        return next_turn, previous_state
 
     def get_terminal_flag(self, board):
         """
@@ -222,3 +216,10 @@ class BoardGame:
             return True
         else:
             return False
+
+    def reset(self):
+        self.start_board = np.array([
+                [0, 0, 0, self.n, 0, 0, 0, 0],
+                [0, 0, 0,      0, 0, 0, 0, 0],
+                [0, 0, 0, self.n, 0, 0, 0, 0]
+        ])
