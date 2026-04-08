@@ -226,8 +226,6 @@ class BoardGame:
             return False
 
     def reset(self):
-        self.start_board = np.array([
-                [0, 0, 0, self.n, 0, 0, 0, 0],
-                [0, 0, 0,      0, 0, 0, 0, 0],
-                [0, 0, 0, self.n, 0, 0, 0, 0]
-        ])
+        self.start_board[:] = 0.0
+        self.start_board[0, 3] = self.n
+        self.start_board[2, 3] = self.n

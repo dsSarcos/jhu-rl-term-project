@@ -6,27 +6,26 @@ from functools import partial
 class RLAgent:
 
     def __init__(self,
-                 eps_type="fixed"):
+                 eps = 0.1,
+                 alpha = 0.1,
+                 gamma = 1.0,
+                 eps_min = None
+                 ):
 
-        self.eps_type = eps_type
-        self.eps = 0.0
-        self.alpha = 0.0
-        self.gamma = 0.0
-        self.state = 0
-        self.action = 0
+        self.eps = eps
+        self.alpha = alpha
+        self.gamma = gamma
         self.prob_prime = 0.0
         self.prob_sub_prime = 0.0
         self.q_table = defaultdict(partial(np.zeros, shape=15))
         self.returns = []
-        self.N = 0
         self.n_step = -1
-        self.eps_max = 0.0
-        self.eps_min = 0.01
+        self.eps_min = eps_min
         self.enable_learning = True
 
         lane = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1]
         self.a2q = {x: y for x, y in zip(lane, np.arange(15))}
-        
+
     def disable(self):
         self.enable_learning = False
 
