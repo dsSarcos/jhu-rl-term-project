@@ -108,7 +108,6 @@ class QLearner(RLAgent):
             if i % 1000 == 0:
                 print(f"Number of episodes played: {i}")
             reward, game_end, current_state = np.nan, False, environment.start_board
-
             while not game_end:
                 roll = np.random.choice([0, 1, 2, 3, 4], p=[1/16, 1/4, 3/8, 1/4, 1/16])
                 actions_indices = environment.get_actions(current_state, 0, roll)

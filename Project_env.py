@@ -118,17 +118,7 @@ class BoardGame:
             reward = 1
         else:
             if next_turn == 1:
-                roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
-                p2_actions = self.get_actions(next_state, next_turn, roll)
-                if p2_actions:
-                    action = np.random.choice(p2_actions)
-                    next_turn, next_state = self.transition(next_state, action, roll, player_turn=next_turn)
-
-                if self.get_terminal_flag(next_state) is True:
-                    if next_turn == 1:
-                        reward = -1
-                    else:
-                        reward = 1
+                next_state, reward, _ = self.play_turn(next_state)
 
         return next_state, reward, self.get_terminal_flag(next_state)
 
