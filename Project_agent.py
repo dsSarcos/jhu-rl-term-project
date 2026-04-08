@@ -128,6 +128,7 @@ class QLearner(RLAgent):
                 current_state = next_state
 
             self.returns.append(reward)
+            # print(len(self.returns))
             environment.reset()
 
 

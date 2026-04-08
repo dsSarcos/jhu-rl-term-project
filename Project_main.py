@@ -6,11 +6,12 @@ import time
 import numpy as np
 
 if __name__ == "__main__":
-    env = Project_env.BoardGame(n=3, print_states=False)
+    env = Project_env.BoardGame(n=4, print_states=False)
     agent = Project_agent.QLearner()
 
-    agent.set_epsilon(0.9)
-    agent.set_alpha(0.4)
+    agent.set_epsilon(0.1)
+    # agent.eps_min = 0.01 
+    agent.set_alpha(0.1)
     agent.set_gamma(1.0)
 
     num_episodes = 100_000

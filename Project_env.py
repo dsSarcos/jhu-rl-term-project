@@ -19,8 +19,11 @@ class BoardGame:
                 [0, 0, 0, self.n, 0, 0, 0, 0]
         ])
 
-        self.rosettes = {0: (1, 7), 1: (4, ), 2: (1, 7)}
+        # self.rosettes = {0: (1, 7), 1: (4, ), 2: (1, 7)}
+        self.rosettes = set([(0, 7), (0, 1), (1, 4), (2, 7), (2, 1)])
+        self.rosettes_lane = set([4, 8, 14])
         self.grid, self.inverse_grid = self.create_grid()
+        self.p2_rosette = False
 
     def encode_state(self, turn, board):
         turn = int(turn)
@@ -108,23 +111,29 @@ class BoardGame:
         applicable reward to be calculated. Returns the new state, the reward, and the
         terminal flag (in that order)
         """
+        self.p2_rosette = False
         reward = 0
-        _, next_state = self.transition(previous_state, action, roll, player_turn=0)
+        next_turn, next_state = self.transition(previous_state, action, roll, player_turn=0)
         if self.get_terminal_flag(next_state) is True:
             reward = 1
         else:
-            roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
-            p2_actions = self.get_actions(next_state, 1, roll)
-            if p2_actions:
-                action = np.random.choice(p2_actions)
-                _, next_state = self.transition(next_state, action, roll, player_turn=1)
+            if next_turn == 1:
+                roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
+                p2_actions = self.get_actions(next_state, next_turn, roll)
+                if p2_actions:
+                    action = np.random.choice(p2_actions)
+                    next_turn, next_state = self.transition(next_state, action, roll, player_turn=next_turn)
 
-            if self.get_terminal_flag(next_state) is True:
-                reward = -1
+                if self.get_terminal_flag(next_state) is True:
+                    if next_turn == 1:
+                        reward = -1
+                    else:
+                        reward = 1
 
         return next_state, reward, self.get_terminal_flag(next_state)
 
     def play_turn(self, previous_state):
+        self.p2_rosette = False
         reward = 0
         roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
         p2_actions = self.get_actions(previous_state, 1, roll)
@@ -139,7 +148,7 @@ class BoardGame:
         return next_state, reward, self.get_terminal_flag(next_state)
 
     def get_actions(self, state, turn, roll):
-        if roll == 0:
+        if roll == 0 or self.p2_rosette is True:
             return []
         # print(state)
         player = int(turn) + 1
@@ -160,8 +169,12 @@ class BoardGame:
 
                 if next_position == len(lane):
                     options.append(position)
-                elif next_position < len(lane) and state[lane[next_position]] != player:
-                    options.append(position)
+                elif next_position < len(lane):
+                    if state[lane[next_position]] != player:
+                        if next_position not in self.rosettes_lane:
+                            options.append(position)
+                        elif state[lane[next_position]] == 0:
+                            options.append(position)
 
         return [self.inverse_grid[opt] for opt in options]
 
@@ -204,7 +217,12 @@ class BoardGame:
         else:
             previous_state[current_row, current_column] = 0
 
-        next_turn = int(not player_turn)
+        next_turn = player_turn
+        if (next_row, next_column) not in self.rosettes: 
+            next_turn = int(not player_turn) 
+        else:
+            if player_turn == 1:
+                self.p2_rosette = True
 
         return next_turn, previous_state
 
