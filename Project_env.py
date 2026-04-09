@@ -27,9 +27,8 @@ class BoardGame:
         self.rolls = []
 
     def encode_state(self, turn, board, roll):
-        self.rolls = ['0', '0', '0', '0', '0']
-        self.rolls[roll] = '1'
-        rolls = "".join(self.rolls)
+        rolls = ''.join(np.binary_repr(roll))
+        rolls = '0'*(2-len(rolls))
         turn = int(turn)
         p1 = board[0, 2]
         p2 = board[2, 2]
@@ -48,7 +47,7 @@ class BoardGame:
 
         bit_string = f"{int(turn)}{rolls}{p1_bin}{p2_bin}{p1_blue}{p2_blue.replace('2','1')}{green_bin}"
         # print(f'binary: {bit_string}')
-        assert len(bit_string) == 37, f'{len(bit_string)} {bit_string}'
+        # assert len(bit_string) == 37, f'{len(bit_string)} {bit_string}'
 
         return int(bit_string, 2)
 

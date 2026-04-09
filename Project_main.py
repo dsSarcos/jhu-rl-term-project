@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     # agent.disable()
 
-    num_episodes = 700_000
+    num_episodes = 10000
     start_time = time.time()
     agent.play_episodes(env, num_episodes)
     finish_time = time.time()
