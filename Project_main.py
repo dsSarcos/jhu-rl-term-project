@@ -9,9 +9,9 @@ if __name__ == "__main__":
     env = Project_env.BoardGame(n=4, print_states=False)
     agent = Project_agent.QLearner()
 
-    agent.disable()
+    # agent.disable()
 
-    num_episodes = 100_000
+    num_episodes = 700_000
     start_time = time.time()
     agent.play_episodes(env, num_episodes)
     finish_time = time.time()
