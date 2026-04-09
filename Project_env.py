@@ -27,8 +27,7 @@ class BoardGame:
         self.rolls = []
 
     def encode_state(self, turn, board, roll):
-        rolls = ''.join(np.binary_repr(roll))
-        rolls = '0'*(2-len(rolls))
+        rolls = np.binary_repr(roll)
         turn = int(turn)
         p1 = board[0, 2]
         p2 = board[2, 2]
@@ -125,9 +124,8 @@ class BoardGame:
 
         return next_state, reward, self.get_terminal_flag(next_state)
 
-    def play_turn(self, previous_state):
+    def play_turn(self, previous_state, reward=0):
         self.p2_rosette = False
-        reward = 0
         roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
         p2_actions = self.get_actions(previous_state, 1, roll)
         if p2_actions:
