@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from collections import defaultdict
 from functools import partial
 
@@ -22,6 +23,7 @@ class RLAgent:
         self.n_step = -1
         self.eps_min = eps_min
         self.enable_learning = True
+        self.rng = np.random.default_rng()
 
     def disable(self):
         self.enable_learning = False
@@ -71,8 +73,7 @@ class RLAgent:
             r = max((300_000-self.n_step)/300_000, 0)
             eps = (self.eps - self.eps_min)*r + self.eps_min
 
-        rng = np.random.default_rng()
-        if eps <= rng.random():
+        if eps <= self.rng.random():
             return a_star_idx
         else:
             b = actions.size
