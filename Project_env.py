@@ -51,12 +51,12 @@ class BoardGame:
             if next_turn is True:
                 return self.play_turn(next_bi, next_ai)
 
-        return (ai, bi), reward, self.get_terminal_flag(ai, bi), next_turn
+        return (ai, bi), reward, self.get_terminal_flag(next_ai, next_bi), next_turn
 
     def play_turn(self, ai, bi, reward=0):
         roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
         p2_actions = self.get_actions(ai, bi, roll)
-        if p2_actions:
+        if p2_actions.size:
             action = np.random.choice(p2_actions)
             ai, bi, next_turn = self.transition(ai, bi, action, roll, True)
             if self.get_terminal_flag(ai, bi) is True:
@@ -68,7 +68,7 @@ class BoardGame:
 
     def get_actions(self, ai, bi, roll):
         if roll == 0:
-            return []
+            return np.array([])
 
         a = ai[1:]
         b = bi[1:]
@@ -109,9 +109,13 @@ class BoardGame:
         """
         if action + roll == 15:
             ai[action] = 0
-            return ai, bi
+            return ai, bi, not player_turn
 
-        ai[action] = 0
+        if action > 0:
+            ai[action] = 0
+        else:
+            ai[action] -= 1
+
         ai[action + roll] = 1
 
         if 4 < action + roll <= 12:
@@ -128,7 +132,7 @@ class BoardGame:
         """
         Returns true if the current state is a terminal state, and false otherwise
         """
-        return ai.sum() == self.n or bi.sum() == self.n
+        return ai.sum() == 0 or bi.sum() == 0
 
     def reset(self):
         self.p1_states[:] = 0.0

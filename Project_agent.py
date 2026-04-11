@@ -110,7 +110,7 @@ class QLearner(RLAgent):
             while not game_end:
                 roll = np.random.choice([0, 1, 2, 3, 4], p=[1/16, 1/4, 3/8, 1/4, 1/16])
                 actions_indices = environment.get_actions(*current_state, roll)
-                if actions_indices and not current_turn:
+                if actions_indices.size and not current_turn:
                     encoded_state = environment.encode_state(*current_state, roll)
                     action = self.select_action(encoded_state, actions_indices)
 
@@ -121,7 +121,7 @@ class QLearner(RLAgent):
                                             reward,
                                             environment.encode_state(*next_state, roll))
                 else:
-                    next_state, reward, game_end, current_turn = environment.play_turn(*current_state)
+                    next_state, reward, game_end, current_turn = environment.play_turn(*current_state[::-1])
 
                 current_state = next_state
 
