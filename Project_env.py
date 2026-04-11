@@ -10,8 +10,16 @@ class BoardGame:
 
         self.p1_start = 3
         self.p1_end = 2
+        self.rosettes = [3, 7, 13]
         self.p2_start = 19
         self.p2_end = 18
+
+        self.p1_pieces = n
+        self.p2_pieces = n
+
+        self.p1_states = np.array([7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        self.p2_states = np.array([7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
 
         self.start_board = np.array([
                 [0, 0, 0, self.n, 0, 0, 0, 0],
@@ -23,7 +31,6 @@ class BoardGame:
         self.rosettes = {(0, 7), (0, 1), (1, 4), (2, 7), (2, 1)}
         self.rosettes_lane = {4, 8, 14}
         self.grid, self.inverse_grid = self.create_grid()
-        self.p2_rosette = False
         self.rolls = []
 
     def encode_state(self, turn, board, roll):
@@ -138,36 +145,42 @@ class BoardGame:
 
         return next_state, reward, self.get_terminal_flag(next_state)
 
-    def get_actions(self, state, turn, roll):
-        if roll == 0 or self.p2_rosette is True:
+    def get_actions(self, ai, bi, roll):
+        if roll == 0:
             return []
-        # print(state)
-        player = int(turn) + 1
-        idx = player if player == 2 else 0
 
-        starting = (idx, 3)
-        lane = [(idx, 4), (idx, 5), (idx, 6), (idx, 7),
-                (1, 7), (1, 6), (1, 5), (1, 4), (1, 3), (1, 2), (1, 1), (1, 0),
-                (idx, 0), (idx, 1)]
+        a = ai[1:]
+        b = bi[1:]
 
-        options = []
-        if state[starting] > 0 and state[lane[roll - 1]] != player:
-            options.append(starting)
+        if not np.any(a):
+            return np.array([0])
 
-        for i, position in enumerate(lane):
-            if state[position] == player:
-                next_position = i + roll
+        # Array of indices
+        temp_a_indices = np.nonzero(a == 1)[0]
 
-                if next_position == len(lane):
-                    options.append(position)
-                elif next_position < len(lane):
-                    if state[lane[next_position]] != player:
-                        if next_position not in self.rosettes_lane:
-                            options.append(position)
-                        elif state[lane[next_position]] == 0:
-                            options.append(position)
+        # Add roll to current indices to find their corresponding new indices
+        a_indices = temp_a_indices + roll
 
-        return [self.inverse_grid[opt] for opt in options]
+        # Remove any indices already occupied by current player
+        a_indices = a_indices[np.isin(a_indices, temp_a_indices, invert=True)]
+
+        # Remove any indices that do not roll out of the board by the exact amount
+        a_indices = a_indices[a_indices <= 14]
+
+        # Get opponent occupied indices
+        b_indices = b == 1
+
+        # Remove any indices that land on opponent's occupied florette
+        if b_indices[7]:
+            a_indices = a_indices[a_indices != 7]
+
+        # Return original allowed indices from current player
+        a_indices = a_indices - roll + 1
+
+        if ai[0] != 0 and not ai[roll]:
+            a_indices = np.insert(a_indices, 0, 0)
+
+        return a_indices
 
     def transition(self, previous_state, action, roll, player_turn=0):
         """
