@@ -48,7 +48,7 @@ class BoardGame:
         reward = 0
         ai, bi = previous_state
         next_ai, next_bi, next_turn = self.transition(ai, bi, action, roll, False)
-        if self.get_terminal_flag(next_ai, next_bi) is True:
+        if self.get_terminal_flag(next_ai, next_bi):
             reward = 1
         else:
             if next_turn is True:
@@ -62,7 +62,7 @@ class BoardGame:
         if p2_actions.size:
             action = np.random.choice(p2_actions)
             ai, bi, next_turn = self.transition(ai, bi, action, roll, True)
-            if self.get_terminal_flag(ai, bi) is True:
+            if self.get_terminal_flag(ai, bi):
                 reward = -1
         else:
             next_turn = False
