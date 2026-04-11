@@ -23,9 +23,6 @@ class RLAgent:
         self.eps_min = eps_min
         self.enable_learning = True
 
-        lane = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0, 1]
-        self.a2q = {x: y for x, y in zip(lane, np.arange(15))}
-
     def disable(self):
         self.enable_learning = False
 
@@ -71,7 +68,7 @@ class RLAgent:
 
         eps = self.eps
         if self.eps_min:
-            r = max((50000-100000)/50000, 0)
+            r = max((300_000-self.n_step)/300_000, 0)
             eps = (self.eps - self.eps_min)*r + self.eps_min
 
         rng = np.random.default_rng()
@@ -86,7 +83,7 @@ class RLAgent:
         # print("Turn = ", self.turn)
         self.state = state
         # print("State = ", self.state)
-        actions = self.q_table[state][[self.a2q[x] for x in action_indices]]
+        actions = self.q_table[state][action_indices]
         action = self.e_greedy(actions)
         self.action = action_indices[action]
         return self.action
@@ -98,30 +95,33 @@ class QLearner(RLAgent):
         super().__init__(*args, **kwargs)
 
     def update_q_table(self, s, a, r, s_):
-        aq = self.a2q[a]
-        self.q_table[s][aq] = self.q_table[s][aq] + self.alpha * (
-                r + self.gamma * self.q_table[s_].max() - self.q_table[s][aq])
+        self.q_table[s][a] = self.q_table[s][a] + self.alpha * (
+                r + self.gamma * self.q_table[s_].max() - self.q_table[s][a])
 
     def play_episodes(self, environment, number_of_episodes):
+        current_turn = False
         for i in range(0, number_of_episodes):
+            self.n_step = i
             if i % 1000 == 0:
                 print(f"Number of episodes played: {i}")
-            reward, game_end, current_state = np.nan, False, environment.start_board
+            reward = 0
+            game_end = False
+            current_state = environment.p1_states, environment.p2_states
             while not game_end:
                 roll = np.random.choice([0, 1, 2, 3, 4], p=[1/16, 1/4, 3/8, 1/4, 1/16])
-                actions_indices = environment.get_actions(current_state, 0, roll)
-                if actions_indices:
-                    encoded_state = environment.encode_state(0, current_state, roll)
+                actions_indices = environment.get_actions(*current_state, roll)
+                if actions_indices and not current_turn:
+                    encoded_state = environment.encode_state(*current_state, roll)
                     action = self.select_action(encoded_state, actions_indices)
 
-                    next_state, reward, game_end = environment.execute_action(current_state, action, roll=roll)
+                    next_state, reward, game_end, current_turn = environment.execute_action(current_state, action, roll=roll)
                     if self.enable_learning is True:
                         self.update_q_table(encoded_state,
                                             action,
                                             reward,
-                                            environment.encode_state(0, next_state, roll))
+                                            environment.encode_state(*next_state, roll))
                 else:
-                    next_state, reward, game_end = environment.play_turn(current_state)
+                    next_state, reward, game_end, current_turn = environment.play_turn(*current_state)
 
                 current_state = next_state
 

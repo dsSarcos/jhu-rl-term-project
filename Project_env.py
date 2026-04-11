@@ -8,7 +8,7 @@ class BoardGame:
         self.print_states = print_states
         self.n = n
 
-        self.rosettes = [3, 7, 13]
+        self.rosettes = {4, 8, 14}
         self.p2_start = 19
         self.p2_end = 18
 
@@ -42,30 +42,29 @@ class BoardGame:
         applicable reward to be calculated. Returns the new state, the reward, and the
         terminal flag (in that order)
         """
-        self.p2_rosette = False
         reward = 0
-        next_turn, next_state = self.transition(previous_state, action, roll, player_turn=0)
-        if self.get_terminal_flag(next_state) is True:
+        ai, bi = previous_state
+        next_ai, next_bi, next_turn = self.transition(ai, bi, action, roll, False)
+        if self.get_terminal_flag(next_ai, next_bi) is True:
             reward = 1
         else:
-            if next_turn == 1:
-                next_state, reward, _ = self.play_turn(next_state)
+            if next_turn is True:
+                return self.play_turn(next_bi, next_ai)
 
-        return next_state, reward, self.get_terminal_flag(next_state)
+        return (ai, bi), reward, self.get_terminal_flag(ai, bi), next_turn
 
-    def play_turn(self, previous_state, reward=0):
-        self.p2_rosette = False
+    def play_turn(self, ai, bi, reward=0):
         roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
-        p2_actions = self.get_actions(previous_state, 1, roll)
+        p2_actions = self.get_actions(ai, bi, roll)
         if p2_actions:
             action = np.random.choice(p2_actions)
-            _, next_state = self.transition(previous_state, action, roll, player_turn=1)
-            if self.get_terminal_flag(next_state) is True:
+            ai, bi, next_turn = self.transition(ai, bi, action, roll, True)
+            if self.get_terminal_flag(ai, bi) is True:
                 reward = -1
         else:
-            next_state = previous_state
+            next_turn = False
 
-        return next_state, reward, self.get_terminal_flag(next_state)
+        return (bi, ai), reward, self.get_terminal_flag(ai, bi), next_turn
 
     def get_actions(self, ai, bi, roll):
         if roll == 0:
@@ -104,7 +103,7 @@ class BoardGame:
 
         return a_indices
 
-    def transition(self, ai, bi, action, roll):
+    def transition(self, ai, bi, action, roll, player_turn):
         """
         Performs the transition to the next state
         """
@@ -120,7 +119,10 @@ class BoardGame:
                 bi[0] += 1
                 bi[action + roll] = 0
 
-        return ai, bi
+        if action + roll not in self.rosettes:
+            player_turn = not player_turn
+
+        return ai, bi, player_turn
 
     def get_terminal_flag(self, ai, bi):
         """
