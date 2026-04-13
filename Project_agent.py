@@ -28,6 +28,8 @@ class RLAgent:
         self.enable_learning = True
         self.file_name = file_name
 
+        self.rng = np.random.default_rng()
+
     def disable(self):
         self.enable_learning = False
 
@@ -76,12 +78,11 @@ class RLAgent:
             r = max((self.n_dec-self.n_step)/self.n_dec, 0)
             eps = (self.eps - self.eps_min)*r + self.eps_min
 
-        rng = np.random.default_rng()
-        if eps <= rng.random():
+        if eps <= self.rng.random():
             return a_star_idx
         else:
             b = actions.size
-            idx = rng.integers(low=0, high=b)
+            idx = self.rng.integers(low=0, high=b)
             return idx
 
     def select_action(self, state, action_indices):
@@ -105,6 +106,7 @@ class RLAgent:
         self.q_table.update(df.to_dict(orient='list'))
         for k, v in self.q_table.items():
             self.q_table[k] = np.array(v)
+
 
 class QLearner(RLAgent):
 

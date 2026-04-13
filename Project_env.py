@@ -18,12 +18,15 @@ class BoardGame:
         self.p1_states = np.array([7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
         self.p2_states = np.array([7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
+        self.empty = np.array([])
+        self.start = np.array([0])
+
     def encode_state(self, ai, bi, roll):
         a = ai[1:]
         b = bi[1:]
 
-        a_bits = "".join(map(str, a))
-        b_bits = "".join(map(str, b))
+        a_bits = "".join(a)
+        b_bits = "".join(b)
 
         state_bits = a_bits + b_bits
 
@@ -68,13 +71,13 @@ class BoardGame:
 
     def get_actions(self, ai, bi, roll):
         if roll == 0:
-            return np.array([])
-
+            return self.empty
+        
         a = ai[1:]
         b = bi[1:]
 
         if not np.any(a):
-            return np.array([0])
+            return self.start
 
         # Array of indices
         temp_a_indices = np.nonzero(a == 1)[0]
