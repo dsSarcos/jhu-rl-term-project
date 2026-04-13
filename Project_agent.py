@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+
 from collections import defaultdict
 from functools import partial
 
@@ -9,8 +11,9 @@ class RLAgent:
                  eps = 0.1,
                  alpha = 0.1,
                  gamma = 1.0,
-                 eps_min = None
-                 ):
+                 eps_min = None,
+                 file_name = None,
+                 n_dec=-1):
 
         self.eps = eps
         self.alpha = alpha
@@ -20,8 +23,10 @@ class RLAgent:
         self.q_table = defaultdict(partial(np.zeros, shape=15))
         self.returns = []
         self.n_step = -1
+        self.n_dec = n_dec
         self.eps_min = eps_min
         self.enable_learning = True
+        self.file_name = file_name
 
     def disable(self):
         self.enable_learning = False
@@ -68,7 +73,7 @@ class RLAgent:
 
         eps = self.eps
         if self.eps_min:
-            r = max((300_000-self.n_step)/300_000, 0)
+            r = max((self.n_dec-self.n_step)/self.n_dec, 0)
             eps = (self.eps - self.eps_min)*r + self.eps_min
 
         rng = np.random.default_rng()
@@ -88,6 +93,18 @@ class RLAgent:
         self.action = action_indices[action]
         return self.action
 
+    def save_learning_table(self):
+        print(f"Saving agent file: {self.file_name}")
+        df = pd.DataFrame(self.q_table)
+        df.to_csv('q_learner.csv', index=False)
+
+    def load_learning_table(self):
+        print(f"Loading agent file: {self.file_name}")
+        df = pd.read_csv(self.file_name)
+        df.columns = df.columns.astype(int)
+        self.q_table.update(df.to_dict(orient='list'))
+        for k, v in self.q_table.items():
+            self.q_table[k] = np.array(v)
 
 class QLearner(RLAgent):
 
@@ -126,7 +143,6 @@ class QLearner(RLAgent):
                 current_state = next_state
 
             self.returns.append(reward)
-            # print(len(self.returns))
             environment.reset()
 
 
