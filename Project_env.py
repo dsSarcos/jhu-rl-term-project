@@ -25,8 +25,8 @@ class BoardGame:
         a = ai[1:]
         b = bi[1:]
 
-        a_bits = "".join(a)
-        b_bits = "".join(b)
+        a_bits = "".join(map(str, a))
+        b_bits = "".join(map(str, b))
 
         state_bits = a_bits + b_bits
 
