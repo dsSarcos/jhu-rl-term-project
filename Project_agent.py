@@ -97,7 +97,7 @@ class RLAgent:
     def save_learning_table(self):
         print(f"Saving agent file: {self.file_name}")
         df = pd.DataFrame(self.q_table)
-        df.to_csv('q_learner.csv', index=False)
+        df.to_csv(self.file_name, index=False)
 
     def load_learning_table(self):
         print(f"Loading agent file: {self.file_name}")
