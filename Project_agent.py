@@ -13,7 +13,9 @@ class RLAgent:
                  gamma = 1.0,
                  eps_min = None,
                  file_name = None,
-                 n_dec=-1):
+                 n_dec=-1,
+                 seed=None
+                 ):
 
         self.eps = eps
         self.alpha = alpha
@@ -28,7 +30,7 @@ class RLAgent:
         self.enable_learning = True
         self.file_name = file_name
 
-        self.rng = np.random.default_rng()
+        self.rng = np.random.default_rng(seed=seed)
 
     def disable(self):
         self.enable_learning = False
@@ -153,25 +155,44 @@ class SARSA(RLAgent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def update_q_table(self, s, a, r, s_, a_):
+    def _get_probs(self, actions):
+        prime_action = actions.max()
+        prime_actions = actions == prime_action
+        n_prime_actions = prime_actions.sum()
+        A = len(actions)
+
+        probs = np.zeros(actions.shape)
+        probs[prime_actions] = self.eps / A
+        probs[not prime_actions] = 1 - self.eps + (self.eps / n_prime_actions)
+
+        return probs
+
+    def update_q_table(self, s, a, r, s_, a_, environment):
+        # Verify this
+        sum_actions = 0.
+        for roll, prob in zip([1, 2, 3, 4], [1/4, 3/8, 1/4, 1/16]):
+            actions = environment.get_actions(s_, 0, roll)
+            probs = self._get_probs(actions)
+            sum_actions += prob * np.dot(probs, self.q[s_, actions])
+
         self.q_table[s][a] = self.q_table[s][a] + self.alpha * (
-                r + self.gamma * self.q_table[s_][a_] - self.q_table[s][a])
+                r + self.gamma * sum_actions - self.q_table[s][a])
 
     def play_episodes(self, environment, number_of_episodes):
+        # expected SARSA needs the roll to be encoded outside of the state
         for i in range(0, number_of_episodes):
             reward, game_end, current_state = np.nan, False, environment.start_board
 
-            roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
+            roll = np.random.choice([0, 1, 2, 3, 4], p=[1/16, 1/4, 3/8, 1/4, 1/16])
             actions_indices = environment.get_actions(current_state, 0, roll)
             current_action = self.select_action(environment.encode_state(0, current_state), actions_indices)
 
             while not game_end:
                 # Refactor into expected SARSA - Off Policy TD Learning
-                roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
+                roll = np.random.choice([0, 1, 2, 3, 4], p=[1/16, 1/4, 3/8, 1/4, 1/16])
                 actions_indices = environment.get_actions(current_state, 0, roll)
                 next_action = self.select_action(current_state, actions_indices)
 
-                self.update_trajectory_table(reward, current_state, current_action)
                 next_state, reward, game_end = environment.execute_action(current_state, current_action)
                 if self.enable_learning is True:
                     self.update_q_table(environment.encode_state(0, current_state),
@@ -182,7 +203,5 @@ class SARSA(RLAgent):
                 current_state = next_state
                 current_action = next_action
 
-            self.update_trajectory_table(reward, current_state, np.nan)
-            self.calculate_episode_return(i)
-            self.clear_trajectory_table()
+            self.returns.append(reward)
             environment.reset()

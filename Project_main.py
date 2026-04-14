@@ -38,7 +38,7 @@ def run_agent(learning_file_name, return_file_name, env, num_episodes, eps, alph
     agent.set_alpha(alpha)
     agent.disable()
 
-    if os.path.exists(learning_file_name):
+    if learning_file_name and os.path.exists(learning_file_name):
         agent.load_learning_table()
     agent.play_episodes(env, num_episodes)
     np.savetxt(return_file_name, agent.returns, delimiter=',')
@@ -46,9 +46,10 @@ def run_agent(learning_file_name, return_file_name, env, num_episodes, eps, alph
     return agent
 
 
+
 if __name__ == "__main__":
-    before_training = False
-    training = True
+    before_training = True
+    training = False
     testing = False
 
     num_episodes = 500_000
@@ -72,7 +73,7 @@ if __name__ == "__main__":
                           agent_type="Q-Learning")
         finish_time = datetime.now()
         print(f"Number of more games won than environment: {sum(agent.returns)}")
-        print(f"Total time in minutes: {(finish_time - start_time).strftime("%H:%M:%S")}")
+        print(f"Total time: {str(finish_time - start_time)}")
 
     elif training is True:
         return_file_name = 'Project_experiment_retrained.csv'
@@ -91,7 +92,7 @@ if __name__ == "__main__":
         finish_time = datetime.now()
         print(f"Average training returns: {np.mean(agent.returns)}")
         print(f"Number of visited states: {len(agent.q_table.keys())}")
-        print(f"Total time in minutes: {(finish_time - start_time).strftime("%H:%M:%S")}")
+        print(f"Total time: {str(finish_time - start_time)}")
 
     elif testing is True:
         return_file_name = 'Project_experiment_test.csv'
@@ -107,4 +108,4 @@ if __name__ == "__main__":
                           agent_type="Q-Learning")
         finish_time = datetime.now()
         print(f"Number of more games won than environment: {sum(agent.returns)}")
-        print(f"Total time in minutes: {(finish_time - start_time).strftime("%H:%M:%S")}")
+        print(f"Total time: {str(finish_time - start_time)}")
