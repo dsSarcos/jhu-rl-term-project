@@ -1,7 +1,7 @@
 import Project_env
 import Project_agent
 
-import time
+from datetime import datetime
 
 import numpy as np
 
@@ -12,10 +12,10 @@ if __name__ == "__main__":
     # agent.disable()
 
     num_episodes = 10000
-    start_time = time.time()
+    start_time = datetime.now()
     agent.play_episodes(env, num_episodes)
-    finish_time = time.time()
+    finish_time = datetime.now()
     np.savetxt('Project_experiment1.csv', agent.returns, delimiter=',')
     print(f"Average returns: {np.mean(agent.returns)}")
     print(f"Number of visited states: {len(agent.q_table.keys())}")
-    print(f"Total time in minutes: {(finish_time - start_time)/60}")
+    print(f"Total time in minutes: {(finish_time - start_time).strftime('%H:%M:%S')}")
