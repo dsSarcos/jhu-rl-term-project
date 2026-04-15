@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import pandas as pd
 
 from collections import defaultdict
@@ -22,15 +23,13 @@ class RLAgent:
         self.gamma = gamma
         self.prob_prime = 0.0
         self.prob_sub_prime = 0.0
-        self.q_table = defaultdict(partial(np.zeros, shape=15))
+        self.q_table = defaultdict(lambda : [0]*15)
         self.returns = []
         self.n_step = -1
         self.n_dec = n_dec
         self.eps_min = eps_min
         self.enable_learning = True
         self.file_name = file_name
-
-        self.rng = np.random.default_rng(seed=seed)
 
     def disable(self):
         self.enable_learning = False
@@ -59,20 +58,13 @@ class RLAgent:
     @staticmethod
     def get_prime_action(actions, prime_action):
         prime_value = actions[prime_action]
-        prob = 1/np.count_nonzero(actions == prime_value)
+        prime_actions = [i for i, x in enumerate(actions) if x == prime_value]
 
-        prime_action_probs = []
-        for action_value in actions:
-            if action_value == prime_value:
-                prime_action_probs.append(prob)
-            else:
-                prime_action_probs.append(0.0)
-
-        return np.random.choice(len(actions), p=prime_action_probs)
+        return random.choice(prime_actions)
 
     def e_greedy(self, actions):
-        a_star_idx = np.argmax(actions)
-        if np.count_nonzero(actions == actions[a_star_idx]) > 1:
+        a_star_idx = actions.index(max(actions))
+        if len([x for x in actions if x == a_star_idx]):
             a_star_idx = self.get_prime_action(actions, a_star_idx)
 
         eps = self.eps
@@ -80,18 +72,19 @@ class RLAgent:
             r = max((self.n_dec-self.n_step)/self.n_dec, 0)
             eps = (self.eps - self.eps_min)*r + self.eps_min
 
-        if eps <= self.rng.random():
+        if eps <= random.random():
             return a_star_idx
         else:
-            b = actions.size
-            idx = self.rng.integers(low=0, high=b)
+            b = len(actions)
+            idx = random.randint(0, b-1)
             return idx
 
     def select_action(self, state, action_indices):
         # print("Turn = ", self.turn)
         self.state = state
         # print("State = ", self.state)
-        actions = self.q_table[state][action_indices]
+        # actions = self.q_table[state][action_indices]
+        actions = [x for i, x in enumerate(self.q_table[state]) if i in action_indices]
         action = self.e_greedy(actions)
         self.action = action_indices[action]
         return self.action
@@ -106,8 +99,6 @@ class RLAgent:
         df = pd.read_csv(self.file_name)
         df.columns = df.columns.astype(int)
         self.q_table.update(df.to_dict(orient='list'))
-        for k, v in self.q_table.items():
-            self.q_table[k] = np.array(v)
 
 
 class QLearner(RLAgent):
@@ -117,7 +108,7 @@ class QLearner(RLAgent):
 
     def update_q_table(self, s, a, r, s_):
         self.q_table[s][a] = self.q_table[s][a] + self.alpha * (
-                r + self.gamma * self.q_table[s_].max() - self.q_table[s][a])
+                r + self.gamma * max(self.q_table[s_]) - self.q_table[s][a])
 
     def play_episodes(self, environment, number_of_episodes):
         current_turn = False
@@ -131,7 +122,7 @@ class QLearner(RLAgent):
             while not game_end:
                 roll = np.random.choice([0, 1, 2, 3, 4], p=[1/16, 1/4, 3/8, 1/4, 1/16])
                 actions_indices = environment.get_actions(*current_state, roll)
-                if actions_indices.size and not current_turn:
+                if actions_indices and not current_turn:
                     encoded_state = environment.encode_state(*current_state, roll)
                     action = self.select_action(encoded_state, actions_indices)
 

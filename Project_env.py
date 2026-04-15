@@ -1,4 +1,5 @@
 import numpy as np
+import random
 from copy import deepcopy
 
 
@@ -15,18 +16,18 @@ class BoardGame:
         self.p1_pieces = self.n
         self.p2_pieces = self.n
 
-        self.p1_states = np.array([7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        self.p2_states = np.array([7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        self.p1_states = [7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.p2_states = [7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-        self.empty = np.array([])
-        self.start = np.array([0])
+        self.empty = []
+        self.start = [0]
 
     def encode_state(self, ai, bi, roll):
         a = ai[1:]
         b = bi[1:]
 
-        a_bits = "".join(map(str, a))
-        b_bits = "".join(map(str, b))
+        a_bits = "".join([str(x) for x in a])
+        b_bits = "".join([str(x) for x in b])
 
         state_bits = a_bits + b_bits
 
@@ -36,7 +37,7 @@ class BoardGame:
 
         return int(bit_string, 2)
 
-    def execute_action(self, previous_state, action, player_turn=0, roll=np.random.choice([0, 1, 2, 3, 4], p=[1/16, 1/4, 3/8, 1/4, 1/16])):
+    def execute_action(self, previous_state, action, player_turn=0, roll=random.choices([0, 1, 2, 3, 4], weights=[1/16, 1/4, 3/8, 1/4, 1/16]).pop()):
         """
         Interface: execute_action(previous_state, action, turn)
 
@@ -57,10 +58,10 @@ class BoardGame:
         return (ai, bi), reward, self.get_terminal_flag(next_ai, next_bi), next_turn
 
     def play_turn(self, ai, bi, reward=0):
-        roll = np.random.choice([0, 1, 2, 3, 4], p=[1 / 16, 1 / 4, 3 / 8, 1 / 4, 1 / 16])
+        roll = random.choices([0, 1, 2, 3, 4], weights=[1/16, 1/4, 3/8, 1/4, 1/16]).pop()
         p2_actions = self.get_actions(ai, bi, roll)
-        if p2_actions.size:
-            action = np.random.choice(p2_actions)
+        if p2_actions:
+            action = random.choice(p2_actions)
             ai, bi, next_turn = self.transition(ai, bi, action, roll, True)
             if self.get_terminal_flag(ai, bi):
                 reward = -1
@@ -76,33 +77,32 @@ class BoardGame:
         a = ai[1:]
         b = bi[1:]
 
-        if not np.any(a):
+        if not any(a):
             return self.start
 
         # Array of indices
-        temp_a_indices = np.nonzero(a == 1)[0]
-
-        # Add roll to current indices to find their corresponding new indices
-        a_indices = temp_a_indices + roll
+        temp_a_indices = [i for i in range(len(a)) if a[i] == 1]
+        # print(temp_a_indices)
 
         # Remove any indices already occupied by current player
-        a_indices = a_indices[np.isin(a_indices, temp_a_indices, invert=True)]
+        a_indices = [x+roll for x in temp_a_indices if x+roll not in temp_a_indices and x+roll <= 14]
 
-        # Remove any indices that do not roll out of the board by the exact amount
-        a_indices = a_indices[a_indices <= 14]
 
         # Get opponent occupied indices
-        b_indices = b == 1
+        b_indices = [1 if x == 1 else 0 for x in b]
 
         # Remove any indices that land on opponent's occupied florette
         if b_indices[7]:
-            a_indices = a_indices[a_indices != 7]
+            # a_indices = [a_indices[a_indices != 7]]
+            a_indices = [x for x in a_indices if x != 7]
 
         # Return original allowed indices from current player
-        a_indices = a_indices - roll + 1
+        # a_indices -= roll
+        # a_indices += 1
+        a_indices = [x - roll + 1 for x in a_indices]
 
         if ai[0] != 0 and not ai[roll]:
-            a_indices = np.insert(a_indices, 0, 0)
+            a_indices = [0] + a_indices
 
         return a_indices
 
@@ -135,11 +135,11 @@ class BoardGame:
         """
         Returns true if the current state is a terminal state, and false otherwise
         """
-        return ai.sum() == 0 or bi.sum() == 0
+        return sum(ai) == 0 or sum(bi) == 0
 
     def reset(self):
-        self.p1_states[:] = 0.0
-        self.p2_states[:] = 0.0
+        self.p1_states = [0] * 15
+        self.p2_states = [0] * 15
 
         self.p1_states[0] = self.n
         self.p2_states[0] = self.n

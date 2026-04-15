@@ -48,14 +48,14 @@ def run_agent(learning_file_name, return_file_name, env, num_episodes, eps, alph
 
 
 if __name__ == "__main__":
-    before_training = True
-    training = False
+    before_training = False
+    training = True
     testing = False
 
-    num_episodes = 500_000
-    n_dec = 200_000
-    eps = 0.1
-    eps_min = -1.0
+    num_episodes = 600_000
+    n_dec = 250_000
+    eps = 0.8
+    eps_min = 0.1
     alpha = 0.1
     env = Project_env.BoardGame(n=4, print_states=False)
 
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         print(f"Total time: {str(finish_time - start_time)}")
 
     elif training is True:
-        return_file_name = 'Project_experiment_retrained.csv'
+        return_file_name = 'Project_experiment_speed.csv'
         learning_file_name = 'q_learner.csv'
         start_time = datetime.now()
         agent = training_agent(learning_file_name,
@@ -88,7 +88,7 @@ if __name__ == "__main__":
                                eps_min=eps_min,
                                n_dec=n_dec,
                                agent_type="Q-Learning",
-                               retrain=True)
+                               retrain=False)
         finish_time = datetime.now()
         print(f"Average training returns: {np.mean(agent.returns)}")
         print(f"Number of visited states: {len(agent.q_table.keys())}")
