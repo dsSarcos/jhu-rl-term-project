@@ -120,7 +120,7 @@ class QLearner(RLAgent):
             game_end = False
             current_state = environment.p1_states, environment.p2_states
             while not game_end:
-                roll = np.random.choice([0, 1, 2, 3, 4], p=[1/16, 1/4, 3/8, 1/4, 1/16])
+                roll = random.choices([0, 1, 2, 3, 4], weights=[1/16, 1/4, 3/8, 1/4, 1/16]).pop()
                 actions_indices = environment.get_actions(*current_state, roll)
                 if actions_indices and not current_turn:
                     encoded_state = environment.encode_state(*current_state, roll)
