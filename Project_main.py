@@ -5,6 +5,9 @@ from datetime import datetime
 import os
 import numpy as np
 
+import random
+random.seed(1)
+
 
 def training_agent(learning_file_name,
                    return_file_name,

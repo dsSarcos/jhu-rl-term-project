@@ -1,6 +1,7 @@
 import numpy as np
 import random
 from copy import deepcopy
+from collections import deque
 
 
 class BoardGame:
@@ -16,26 +17,30 @@ class BoardGame:
         self.p1_pieces = self.n
         self.p2_pieces = self.n
 
-        self.p1_states = [7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        self.p2_states = [7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        # self.p2_states = [7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        # self.p1_states = [7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.p1_states = deque([7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        self.p2_states = deque([7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
         self.empty = []
         self.start = [0]
 
     def encode_state(self, ai, bi, roll):
-        a = ai[1:]
-        b = bi[1:]
 
-        a_bits = "".join([str(x) for x in a])
-        b_bits = "".join([str(x) for x in b])
+        a1 = ai.popleft()
+        b1 = bi.popleft()
 
-        state_bits = a_bits + b_bits
+        out = 0
+        for i in ai:
+            out = (out << 1) | i
 
-        roll_bits = f"{roll:03b}"
+        for i in bi:
+            out = (out << 1) | i
 
-        bit_string = roll_bits + state_bits
+        ai.appendleft(a1)
+        bi.appendleft(b1)
 
-        return int(bit_string, 2)
+        return out
 
     def execute_action(self, previous_state, action, player_turn=0, roll=random.choices([0, 1, 2, 3, 4], weights=[1/16, 1/4, 3/8, 1/4, 1/16]).pop()):
         """
@@ -73,15 +78,17 @@ class BoardGame:
     def get_actions(self, ai, bi, roll):
         if roll == 0:
             return self.empty
-        
-        a = ai[1:]
-        b = bi[1:]
 
-        if not any(a):
+        a1 = ai.popleft()
+        b1 = bi.popleft()
+
+        if not any(ai):
+            ai.appendleft(a1)
+            bi.appendleft(b1)
             return self.start
 
         # Array of indices
-        temp_a_indices = [i for i in range(len(a)) if a[i] == 1]
+        temp_a_indices = [i for i in range(len(ai)) if ai[i] == 1]
         # print(temp_a_indices)
 
         # Remove any indices already occupied by current player
@@ -89,18 +96,17 @@ class BoardGame:
 
 
         # Get opponent occupied indices
-        b_indices = [1 if x == 1 else 0 for x in b]
+        b_indices = [1 if x == 1 else 0 for x in bi]
 
         # Remove any indices that land on opponent's occupied florette
         if b_indices[7]:
-            # a_indices = [a_indices[a_indices != 7]]
             a_indices = [x for x in a_indices if x != 7]
 
         # Return original allowed indices from current player
-        # a_indices -= roll
-        # a_indices += 1
         a_indices = [x - roll + 1 for x in a_indices]
 
+        ai.appendleft(a1)
+        bi.appendleft(b1)
         if ai[0] != 0 and not ai[roll]:
             a_indices = [0] + a_indices
 
@@ -138,9 +144,9 @@ class BoardGame:
         return sum(ai) == 0 or sum(bi) == 0
 
     def reset(self):
-        self.p1_states = [0] * 15
-        self.p2_states = [0] * 15
+        self.p1_states = deque([0] * 14)
+        self.p2_states = deque([0] * 14)
 
-        self.p1_states[0] = self.n
-        self.p2_states[0] = self.n
+        self.p1_states.appendleft(self.n)
+        self.p2_states.appendleft(self.n)
 
