@@ -25,7 +25,7 @@ class BoardGame:
         self.empty = []
         self.start = [0]
 
-    def encode_state(self, ai, bi, roll):
+    def encode_state(self, ai, bi):
 
         a1 = ai.popleft()
         b1 = bi.popleft()
@@ -104,6 +104,7 @@ class BoardGame:
 
         # Return original allowed indices from current player
         a_indices = [x - roll + 1 for x in a_indices]
+        # a_indices = (x - roll + 1 for x in a_indices)
 
         ai.appendleft(a1)
         bi.appendleft(b1)

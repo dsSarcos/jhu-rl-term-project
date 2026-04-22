@@ -4,6 +4,9 @@ import Project_agent
 from datetime import datetime
 import os
 import numpy as np
+from pathlib import Path
+
+from multiprocessing import Pool
 
 import random
 random.seed(1)
@@ -48,67 +51,63 @@ def run_agent(learning_file_name, return_file_name, env, num_episodes, eps, alph
 
     return agent
 
+def timer(f):
+    def g():
+        start_time = datetime.now()
+        f()
+        end_time = datetime.now()
+        print(str(end_time - start_time))
+    return g
+
+experiment_dir = "experiments"
+
+@timer
+def experiment_1():
+    experiment_name = "1"
+    n_agents = 1
+
+    num_episodes = 1
+    n_dec = 250_000
+    eps = 0.9
+    eps_min = 0.1
+    alpha = 0.1
+
+    hyperparameters = {
+        "n_dec": n_dec,
+        "eps": eps,
+        "eps_min": eps_min,
+        "alpha": alpha
+    }
+
+    q_learners = [Project_agent.QLearner(**hyperparameters) for _ in range(n_agents)]
+    q_returns = np.zeros((n_agents, num_episodes))
+
+    esarsa_learners = [Project_agent.eSARSA(**hyperparameters) for _ in range(n_agents)]
+    esarsa_returns = np.zeros((n_agents, num_episodes))
+
+
+    environment = Project_env.BoardGame()
+    for j in range(num_episodes):
+        if j % 1000 == 0:
+            print(f"Episode: {j}")
+        for i, (ql, es) in enumerate(zip(q_learners, esarsa_learners)):
+            #TODO: Comment the episode loop while debugging
+            # q_returns[i, j] = ql.play_episodes(environment, j)
+            esarsa_returns[i, j] = es.play_episodes(environment, j)
+            
+    for i, (ql, es) in enumerate(zip(q_learners, esarsa_learners)):
+        fp = Path(f"{experiment_dir}/{experiment_name}/agents/q_learning/{i}.csv")
+        fp.parent.mkdir(parents=True, exist_ok=True)
+        ql.save_learning_table(fp)
+
+        fp = Path(f"{experiment_dir}/{experiment_name}/agents/eSARSA/{i}.csv")
+        fp.parent.mkdir(parents=True, exist_ok=True)
+        es.save_learning_table(fp)
+
+    data = np.array([q_returns.mean(axis=0), esarsa_returns.mean(axis=0)]).T
+    np.savetxt(Path(f"{experiment_dir}/{experiment_name}/returns.csv"), data, delimiter=",")
 
 
 if __name__ == "__main__":
-    before_training = False
-    training = True
-    testing = False
-
-    num_episodes = 600_000
-    n_dec = 250_000
-    eps = 0.8
-    eps_min = 0.1
-    alpha = 0.1
-    env = Project_env.BoardGame(n=4, print_states=False)
-
-    if before_training is True:
-        return_file_name = 'Project_experiment_before_training.csv'
-        learning_file_name = None
-        num_episodes = 1000
-        start_time = datetime.now()
-        agent = run_agent(learning_file_name,
-                          return_file_name,
-                          env,
-                          num_episodes,
-                          eps,
-                          alpha,
-                          agent_type="Q-Learning")
-        finish_time = datetime.now()
-        print(f"Number of more games won than environment: {sum(agent.returns)}")
-        print(f"Total time: {str(finish_time - start_time)}")
-
-    elif training is True:
-        return_file_name = 'Project_experiment_speed.csv'
-        learning_file_name = 'q_learner.csv'
-        start_time = datetime.now()
-        agent = training_agent(learning_file_name,
-                               return_file_name,
-                               env,
-                               num_episodes,
-                               eps,
-                               alpha,
-                               eps_min=eps_min,
-                               n_dec=n_dec,
-                               agent_type="Q-Learning",
-                               retrain=False)
-        finish_time = datetime.now()
-        print(f"Average training returns: {np.mean(agent.returns)}")
-        print(f"Number of visited states: {len(agent.q_table.keys())}")
-        print(f"Total time: {str(finish_time - start_time)}")
-
-    elif testing is True:
-        return_file_name = 'Project_experiment_test.csv'
-        learning_file_name = None
-        num_episodes = 1000
-        start_time = datetime.now()
-        agent = run_agent(learning_file_name,
-                          return_file_name,
-                          env,
-                          num_episodes,
-                          eps,
-                          alpha,
-                          agent_type="Q-Learning")
-        finish_time = datetime.now()
-        print(f"Number of more games won than environment: {sum(agent.returns)}")
-        print(f"Total time: {str(finish_time - start_time)}")
+    
+    experiment_1()
