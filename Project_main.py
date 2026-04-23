@@ -66,23 +66,29 @@ def experiment_1():
     experiment_name = "1"
     n_agents = 1
 
-    num_episodes = 1
+    num_episodes = 250_000
     n_dec = 250_000
     eps = 0.9
     eps_min = 0.1
-    alpha = 0.1
 
-    hyperparameters = {
+    q_learner_hyperparameters = {
         "n_dec": n_dec,
         "eps": eps,
         "eps_min": eps_min,
-        "alpha": alpha
+        "alpha": 0.1
     }
 
-    q_learners = [Project_agent.QLearner(**hyperparameters) for _ in range(n_agents)]
+    esarsa_hyperparameters = {
+        "n_dec": n_dec,
+        "eps": eps,
+        "eps_min": eps_min,
+        "alpha": 1.0
+    }
+
+    q_learners = [Project_agent.QLearner(**q_learner_hyperparameters) for _ in range(n_agents)]
     q_returns = np.zeros((n_agents, num_episodes))
 
-    esarsa_learners = [Project_agent.eSARSA(**hyperparameters) for _ in range(n_agents)]
+    esarsa_learners = [Project_agent.eSARSA(**esarsa_hyperparameters) for _ in range(n_agents)]
     esarsa_returns = np.zeros((n_agents, num_episodes))
 
 
@@ -91,8 +97,7 @@ def experiment_1():
         if j % 1000 == 0:
             print(f"Episode: {j}")
         for i, (ql, es) in enumerate(zip(q_learners, esarsa_learners)):
-            #TODO: Comment the episode loop while debugging
-            # q_returns[i, j] = ql.play_episodes(environment, j)
+            q_returns[i, j] = ql.play_episodes(environment, j)
             esarsa_returns[i, j] = es.play_episodes(environment, j)
             
     for i, (ql, es) in enumerate(zip(q_learners, esarsa_learners)):
