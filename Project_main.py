@@ -137,14 +137,16 @@ def experiment_2():
         current_turn = False
         while not game_end:
             roll = random.choices([0, 1, 2, 3, 4], weights=[1/16, 1/4, 3/8, 1/4, 1/16]).pop()
-            current_state = environment.p1_states, environment.p2_states if not current_turn else environment.p2_states, environment.p1_states
+            current_state = (environment.p1_states, environment.p2_states) if not current_turn else (environment.p2_states, environment.p1_states)
             actions_indices = environment.get_actions(*current_state, roll)
             if actions_indices:
                  action = player1.select_action(environment.encode_state(*current_state), actions_indices) if not current_turn else player2.select_action(environment.encode_state(*current_state), actions_indices)
-                 next_state_and_turn = environment.execute_action(current_state, action, roll, current_turn)
+                 next_state_and_turn = environment.transition(*current_state, action, roll, current_turn)
                  next_state, current_turn = (next_state_and_turn[:2], next_state_and_turn[-1])
+                 current_state = next_state
+            else:
+                current_turn = not current_turn
 
-            current_state = next_state
             game_end = environment.get_terminal_flag(*current_state)
 
         results[i] = 1 if not current_turn else -1

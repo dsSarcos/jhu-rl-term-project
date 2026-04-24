@@ -90,12 +90,12 @@ class RLAgent:
     def save_learning_table(self, file_name):
         print(f"Saving agent file: {file_name}")
         df = pd.DataFrame(data=self.q_table.values(), index=self.q_table.keys())
-        df.to_csv(file_name, header=None)
+        df.to_csv(file_name)
 
     def load_learning_table(self, file_name):
         print(f"Loading agent file: {file_name}")
-        df = pd.read_csv(file_name).set_index('0')
-        self.q_table = df.to_dict(orient="index", into=defaultdict(list))
+        df = pd.read_csv(file_name, index_col=0)
+        self.q_table = df.T.to_dict(orient="index", into=defaultdict(list))
 
 
 class QLearner(RLAgent):
