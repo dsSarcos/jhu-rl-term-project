@@ -144,22 +144,14 @@ class eSARSA(RLAgent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _get_probs(self, actions, values):
+    def _get_probs(self, values):
         prime_value = max(values)
-        prime_action = values.index(max(values))
-        # prime_action = max(actions)
-        # prime_actions = actions == prime_action
-        prime_actions = [1 if x == prime_value else 0 for x in values]
-        n_prime_actions = sum(prime_actions)
-        A = len(actions)
+        A = len(values)
 
         if A == 1:
             probs = [1.0]
         else:
-            if n_prime_actions > 1:
-                probs = [(1 - self.eps + (self.eps / A))/n_prime_actions if x == prime_value else self.eps / A for x in values]
-            else:
-                probs = [1 - self.eps + (self.eps / A) if x == prime_value else self.eps / A for x in values]
+            probs = [1 - self.eps + (self.eps / A) if x == prime_value else self.eps / A for x in values]
 
         return probs
 
@@ -171,7 +163,7 @@ class eSARSA(RLAgent):
             actions = environment.get_actions(*s_, roll)
             if actions:
                 values = [self.q_table[encoded_next_state][a] for a in actions]
-                probs = self._get_probs(actions, values)
+                probs = self._get_probs(values)
                 sum_actions += prob * sum([p * q for p, q in zip(probs, values)])
 
         self.q_table[s][a] = self.q_table[s][a] + self.alpha * (
