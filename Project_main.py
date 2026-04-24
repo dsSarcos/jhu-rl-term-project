@@ -149,7 +149,7 @@ def experiment_2():
 
             game_end = environment.get_terminal_flag(*current_state)
 
-        results[i] = 1 if not current_turn else -1
+        results[i] = 1 if current_turn else -1
 
     print(f"Player 1 WR: {len(results[results == 1]) / len(results)}")
     print(f"Player 2 WR: {len(results[results == -1]) / len(results)}")
@@ -161,5 +161,5 @@ def experiment_2():
 if __name__ == "__main__":
     
     experiment_1()
-
+    
     experiment_2()

@@ -95,7 +95,7 @@ class RLAgent:
     def load_learning_table(self, file_name):
         print(f"Loading agent file: {file_name}")
         df = pd.read_csv(file_name, index_col=0)
-        self.q_table = df.T.to_dict(orient="index", into=defaultdict(list))
+        self.q_table.update(df.T.to_dict(orient="index"))
 
 
 class QLearner(RLAgent):
