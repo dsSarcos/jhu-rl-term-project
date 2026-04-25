@@ -7,6 +7,7 @@ import numpy as np
 from pathlib import Path
 
 from multiprocessing import Pool
+from tqdm import tqdm
 
 import random
 random.seed(1)
@@ -64,9 +65,9 @@ experiment_dir = "experiments"
 @timer
 def experiment_1():
     experiment_name = "1"
-    n_agents = 1
+    n_agents = 20
 
-    num_episodes = 10
+    num_episodes = 400_000
     n_dec = 250_000
     eps = 0.9
     eps_min = 0.1
@@ -82,32 +83,35 @@ def experiment_1():
         "n_dec": n_dec,
         "eps": eps,
         "eps_min": eps_min,
-        "alpha": 1.0
+        "alpha": 0.1
     }
 
-    q_learners = [QLearner(**q_learner_hyperparameters) for _ in range(n_agents)]
+    # q_learners = [QLearner(**q_learner_hyperparameters) for _ in range(n_agents)]
     q_returns = np.zeros((n_agents, num_episodes))
 
-    esarsa_learners = [eSARSA(**esarsa_hyperparameters) for _ in range(n_agents)]
+    # esarsa_learners = [eSARSA(**esarsa_hyperparameters) for _ in range(n_agents)]
     esarsa_returns = np.zeros((n_agents, num_episodes))
 
 
     environment = BoardGame()
-    for j in range(num_episodes):
-        if j % 1000 == 0:
-            print(f"Episode: {j}")
-        for i, (ql, es) in enumerate(zip(q_learners, esarsa_learners)):
+    for i in range(n_agents):
+        print(f"Agent: {i+1}")
+        ql = QLearner(**q_learner_hyperparameters)
+        es = eSARSA(**esarsa_hyperparameters)
+        for j in tqdm(range(num_episodes)):
             q_returns[i, j] = ql.play_episodes(environment, j)
             esarsa_returns[i, j] = es.play_episodes(environment, j)
             
-    for i, (ql, es) in enumerate(zip(q_learners, esarsa_learners)):
-        fp = Path(f"{experiment_dir}/{experiment_name}/agents/q_learning/{i}.csv")
-        fp.parent.mkdir(parents=True, exist_ok=True)
-        ql.save_learning_table(fp)
+        if i == 0:
+            fp = Path(f"{experiment_dir}/{experiment_name}/agents/q_learning/{i}.csv")
+            fp.parent.mkdir(parents=True, exist_ok=True)
+            ql.save_learning_table(fp)
 
-        fp = Path(f"{experiment_dir}/{experiment_name}/agents/eSARSA/{i}.csv")
-        fp.parent.mkdir(parents=True, exist_ok=True)
-        es.save_learning_table(fp)
+            fp = Path(f"{experiment_dir}/{experiment_name}/agents/eSARSA/{i}.csv")
+            fp.parent.mkdir(parents=True, exist_ok=True)
+            es.save_learning_table(fp)
+        
+        environment.reset()
 
     data = np.array([q_returns.mean(axis=0), esarsa_returns.mean(axis=0)]).T
     np.savetxt(Path(f"{experiment_dir}/{experiment_name}/returns.csv"), data, delimiter=",")
