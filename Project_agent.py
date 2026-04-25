@@ -144,13 +144,13 @@ class eSARSA(RLAgent):
         super().__init__(*args, **kwargs)
 
     def _get_probs(self, values):
-        prime_value = max(values)
+        a_star_idx = values.index(max(values))
         A = len(values)
 
         if A == 1:
             probs = [1.0]
         else:
-            probs = [1 - self.eps + (self.eps / A) if x == prime_value else self.eps / A for x in values]
+            probs = [1 - self.eps + (self.eps / A) if x == a_star_idx else self.eps / A for x in range(len(values))]
 
         return probs
 
