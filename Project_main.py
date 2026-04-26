@@ -28,7 +28,6 @@ def experiment_1():
     n_agents = 20
 
     num_episodes = 400_000
-    num_episodes = 100
     n_dec = 250_000
     eps = 0.9
     eps_min = 0.1
@@ -64,11 +63,13 @@ def experiment_1():
             esarsa_returns[i, j] = es.play_episodes(environment, j)
             
         if i == 0:
-            fp = Path(f"{experiment_dir}/{experiment_name}/agents/q_learning/{i}.csv")
+            # fp = Path(f"{experiment_dir}/{experiment_name}/agents/q_learning/{i}.csv")
+            fp = Path(f"{experiment_dir}/{experiment_name}/agents/q_learning/{i}.parquet")
             fp.parent.mkdir(parents=True, exist_ok=True)
             ql.save_learning_table(fp)
 
-            fp = Path(f"{experiment_dir}/{experiment_name}/agents/eSARSA/{i}.csv")
+            # fp = Path(f"{experiment_dir}/{experiment_name}/agents/eSARSA/{i}.csv")
+            fp = Path(f"{experiment_dir}/{experiment_name}/agents/eSARSA/{i}.parquet")
             fp.parent.mkdir(parents=True, exist_ok=True)
             es.save_learning_table(fp)
         
