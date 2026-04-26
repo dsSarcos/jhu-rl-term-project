@@ -60,14 +60,16 @@ class RLAgent:
 
         return random.choice(prime_actions)
 
-    def e_greedy(self, actions):
-        a_star_idx = actions.index(max(actions))
+    def e_greedy(self, actions, turn):
+        # f = min if turn else max
+        f = max
+        a_star_idx = actions.index(f(actions))
         if len([x for x in actions if x == a_star_idx]):
             a_star_idx = self.get_prime_action(actions, a_star_idx)
 
         eps = self.eps
         if self.eps_min:
-            r = max((self.n_dec-self.n_step)/self.n_dec, 0)
+            r = f((self.n_dec-self.n_step)/self.n_dec, 0)
             eps = (self.eps - self.eps_min)*r + self.eps_min
 
         if eps <= random.random():
@@ -77,13 +79,13 @@ class RLAgent:
             idx = random.randint(0, b-1)
             return idx
 
-    def select_action(self, state, action_indices):
+    def select_action(self, state, action_indices, turn):
         # print("Turn = ", self.turn)
         self.state = state
         # print("State = ", self.state)
         # actions = self.q_table[state][action_indices]
         actions = [x for i, x in enumerate(self.q_table[state]) if i in action_indices]
-        action = self.e_greedy(actions)
+        action = self.e_greedy(actions, turn)
         self.action = action_indices[action]
         return self.action
 
@@ -94,8 +96,8 @@ class RLAgent:
 
     def load_learning_table(self, file_name):
         print(f"Loading agent file: {file_name}")
-        df = pd.read_csv(file_name, index_col=0)
-        self.q_table.update(df.T.to_dict(orient="index"))
+        df = pd.read_csv(file_name, index_col=0, low_memory=True)
+        self.q_table.update(df.T.to_dict(orient="list"))
 
 
 class QLearner(RLAgent):
@@ -109,33 +111,54 @@ class QLearner(RLAgent):
 
     def play_episodes(self, environment, n_step=None):
         current_turn = False
-        # for i in range(0, number_of_episodes):
         self.n_step = n_step
         reward = 0
         game_end = False
-        current_state = environment.p1_states, environment.p2_states
+        previous_sa = {
+            0: None,
+            1: None
+        }
         while not game_end:
             roll = random.choices([0, 1, 2, 3, 4], weights=[1/16, 1/4, 3/8, 1/4, 1/16]).pop()
+            current_state = (environment.p1_states, environment.p2_states) if not current_turn else (environment.p2_states, environment.p1_states)
             actions_indices = environment.get_actions(*current_state, roll)
-            if actions_indices and not current_turn:
+            if actions_indices:
                 encoded_state = environment.encode_state(*current_state)
-                action = self.select_action(encoded_state, actions_indices)
+                action = self.select_action(encoded_state, actions_indices, current_turn)
+                previous_sa[current_turn] = (encoded_state, action)
 
-                next_state, reward, game_end, current_turn = environment.execute_action(current_state, action, roll=roll)
-                if self.enable_learning is True:
-                    self.update_q_table(encoded_state,
-                                        action,
-                                        reward,
-                                        environment.encode_state(*next_state))
+                next_state, reward, game_end, next_turn = environment.execute_action(current_state, action, roll, current_turn)
+
+                if current_turn == next_turn: # player has hit a rosette
+                    self.update_q_table(
+                        encoded_state,
+                        action,
+                        reward,
+                        environment.encode_state(*next_state)
+                    )
+                    previous_sa[current_turn] = None
+                else:
+                    if previous_sa[next_turn]:
+                        s, a = previous_sa[next_turn]
+                        self.update_q_table(
+                            s,
+                            a,
+                            reward,
+                            environment.encode_state(*next_state)
+                        )
+                        previous_sa[next_turn] = None
+                
+                current_turn = next_turn
+                current_state = next_state
             else:
-                next_state, reward, game_end, current_turn = environment.play_turn(*current_state[::-1])
+                current_turn = not current_turn
 
-            current_state = next_state
+        remaining_player, s, a = [(turn, val[0], val[1]) for turn, val in previous_sa.items() if val].pop()
+        self.update_q_table(s, a, -reward, environment.encode_state(*next_state)) # NEXT STATE MIGHT BE WRONG HERE
 
-        # self.returns.append(reward)
         environment.reset()
-        return reward
-        # return self.rewards
+        p1_return = 1 if previous_sa[0] is None else -1
+        return p1_return, -p1_return
 
 
 class eSARSA(RLAgent):
@@ -169,31 +192,55 @@ class eSARSA(RLAgent):
                 r + self.gamma * sum_actions - self.q_table[s][a])
 
     def play_episodes(self, environment, n_step=None):
-        # expected SARSA needs the roll to be encoded outside of the state
-        self.n_step = n_step
         current_turn = False
+        self.n_step = n_step
         reward = 0
         game_end = False
-        current_state = environment.p1_states, environment.p2_states
+        previous_sa = {
+            0: None,
+            1: None
+        }
         while not game_end:
             roll = random.choices([0, 1, 2, 3, 4], weights=[1/16, 1/4, 3/8, 1/4, 1/16]).pop()
+            current_state = (environment.p1_states, environment.p2_states) if not current_turn else (environment.p2_states, environment.p1_states)
             actions_indices = environment.get_actions(*current_state, roll)
-            if actions_indices and not current_turn:
+            if actions_indices:
                 encoded_state = environment.encode_state(*current_state)
-                action = self.select_action(encoded_state, actions_indices)
+                action = self.select_action(encoded_state, actions_indices, current_turn)
+                previous_sa[current_turn] = (encoded_state, action)
 
-                next_state, reward, game_end, current_turn = environment.execute_action(current_state, action, roll=roll)
-                if self.enable_learning is True:
-                    self.update_q_table(encoded_state,
-                                        action,
-                                        reward,
-                                        next_state,
-                                        environment)
+                next_state, reward, game_end, next_turn = environment.execute_action(current_state, action, roll, current_turn)
+
+                if current_turn == next_turn: # player has hit a rosette
+                    self.update_q_table(
+                        encoded_state,
+                        action,
+                        reward,
+                        next_state,
+                        environment
+                    )
+                    previous_sa[current_turn] = None
+                else:
+                    if previous_sa[next_turn]:
+                        s, a = previous_sa[next_turn]
+                        self.update_q_table(
+                            s,
+                            a,
+                            reward,
+                            next_state,
+                            environment
+                        )
+                        previous_sa[next_turn] = None
+                
+                current_turn = next_turn
+                current_state = next_state
             else:
-                next_state, reward, game_end, current_turn = environment.play_turn(*current_state[::-1])
+                current_turn = not current_turn
 
-            current_state = next_state
+        remaining_player, s, a = [(turn, val[0], val[1]) for turn, val in previous_sa.items() if val].pop()
+        self.update_q_table(s, a, -reward, next_state, environment) # NEXT STATE MIGHT BE WRONG HERE
 
-        # self.returns.append(reward)
         environment.reset()
-        return reward
+        p1_return = 1 if previous_sa[0] is None else -1
+        return p1_return, -p1_return
+

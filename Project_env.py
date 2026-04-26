@@ -37,12 +37,15 @@ class BoardGame:
         for i in bi:
             out = (out << 1) | i
 
+        # out = (out << 3) | (self.n - a1)
+        # out = (out << 3) | (self.n - b1)
+
         ai.appendleft(a1)
         bi.appendleft(b1)
 
         return out
 
-    def execute_action(self, previous_state, action, player_turn=0, roll=random.choices([0, 1, 2, 3, 4], weights=[1/16, 1/4, 3/8, 1/4, 1/16]).pop()):
+    def execute_action(self, previous_state, action, roll=random.choices([0, 1, 2, 3, 4], weights=[1/16, 1/4, 3/8, 1/4, 1/16]).pop(), player_turn=0):
         """
         Interface: execute_action(previous_state, action, turn)
 
@@ -53,12 +56,12 @@ class BoardGame:
         """
         reward = 0
         ai, bi = previous_state
-        next_ai, next_bi, next_turn = self.transition(ai, bi, action, roll, False)
+        next_ai, next_bi, next_turn = self.transition(ai, bi, action, roll, player_turn)
         if self.get_terminal_flag(next_ai, next_bi):
             reward = 1
-        else:
-            if next_turn is True:
-                return self.play_turn(next_bi, next_ai)
+        # else:
+        #     if next_turn is True:
+        #         return self.play_turn(next_bi, next_ai)
 
         return (ai, bi), reward, self.get_terminal_flag(next_ai, next_bi), next_turn
 
@@ -119,7 +122,7 @@ class BoardGame:
         """
         if action + roll == 15:
             ai[action] = 0
-            return ai, bi, not player_turn
+            return ai, bi, int(not player_turn)
 
         if action > 0:
             ai[action] = 0
@@ -134,7 +137,7 @@ class BoardGame:
                 bi[action + roll] = 0
 
         if action + roll not in self.rosettes:
-            player_turn = not player_turn
+            player_turn = int(not player_turn)
 
         return ai, bi, player_turn
 
