@@ -37,8 +37,8 @@ class BoardGame:
         for i in bi:
             out = (out << 1) | i
 
-        # out = (out << 3) | (self.n - a1)
-        # out = (out << 3) | (self.n - b1)
+        out = (out << 3) | (self.n - a1)
+        out = (out << 3) | (self.n - b1)
 
         ai.appendleft(a1)
         bi.appendleft(b1)

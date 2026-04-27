@@ -4,6 +4,7 @@ import pandas as pd
 
 from collections import defaultdict
 from functools import partial
+from copy import deepcopy
 
 
 class RLAgent:
@@ -14,9 +15,9 @@ class RLAgent:
                  gamma = 1.0,
                  eps_min = None,
                  n_dec=-1,
-                 seed=None
                  ):
-
+        
+        self.temp_eps = eps
         self.eps = eps
         self.alpha = alpha
         self.gamma = gamma
@@ -31,9 +32,11 @@ class RLAgent:
 
     def disable(self):
         self.enable_learning = False
+        self.eps = 0.0
 
     def enable(self):
         self.enable_learning = True
+        self.eps = deepcopy(self.temp_eps)
 
     def set_gamma(self, gamma):
         self.gamma = gamma
@@ -165,22 +168,26 @@ class QLearner(RLAgent):
 
 class eSARSA(RLAgent):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, on_policy=True, **kwargs):
         super().__init__(*args, **kwargs)
+        self.on_policy = on_policy
 
     def _get_probs(self, values):
-        a_star_idx = values.index(max(values))
-        A = len(values)
+        if self.on_policy:
+            a_star_idx = values.index(max(values))
+            A = len(values)
 
-        if A == 1:
-            probs = [1.0]
+            if A == 1:
+                probs = [1.0]
+            else:
+                probs = [1 - self.eps + (self.eps / A) if x == a_star_idx else self.eps / A for x in range(len(values))]
+
+            return probs
         else:
-            probs = [1 - self.eps + (self.eps / A) if x == a_star_idx else self.eps / A for x in range(len(values))]
-
-        return probs
+            A = len(values)
+            return [1/A for _ in values]
 
     def update_q_table(self, s, a, r, s_, environment):
-        # TODO: Verify that probs add up to one
         sum_actions = 0.
         encoded_next_state = environment.encode_state(*s_)
         for roll, prob in zip([1, 2, 3, 4], [1/4, 3/8, 1/4, 1/16]):
